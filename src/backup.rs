@@ -54,7 +54,6 @@ fn collect_files<P: AsRef<Path>>(home_dir: P) -> Vec<PathBuf> {
             .unwrap_or_else(|_| panic!("failed to read directory: {:?}", dir))
             .filter_map(|entry| entry.ok())
             .map(|entry| entry.path())
-            .filter_map(|path| path.canonicalize().ok())
         {
             if path.is_dir() {
                 dirs.push(path);

@@ -63,7 +63,7 @@ fn main() {
                 PathBuf::from(home_dir)
             }
             .canonicalize()
-            .unwrap_or_else(|_| panic!("dotfiles directory not found"));
+            .unwrap_or_else(|_| panic!("install directory not found"));
 
             let today = Local::now().format("%Y%m%d_%H%M").to_string();
             let backup_dir = if let Some(path) = args.get_one::<PathBuf>("backup_dir") {
@@ -74,10 +74,7 @@ fn main() {
             };
 
             println!("dotfiles directory: {:?}", dotfiles_dir);
-            println!(
-                "install directory: {:?}",
-                install_dir.canonicalize().unwrap()
-            );
+            println!("install directory: {:?}", install_dir);
             println!("backup directory: {:?}", backup_dir);
 
             install(dotfiles_dir, install_dir, backup_dir);
@@ -88,14 +85,18 @@ fn main() {
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
                 PathBuf::from(home_dir).join(".dotfiles")
-            };
+            }
+            .canonicalize()
+            .unwrap_or_else(|_| panic!("dotfiles directory not found"));
 
             let home_dir = if let Some(path) = args.get_one::<PathBuf>("home_dir") {
                 path.clone()
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
                 PathBuf::from(home_dir)
-            };
+            }
+            .canonicalize()
+            .unwrap_or_else(|_| panic!("home directory not found"));
 
             println!("dotfiles directory: {:?}", dotfiles_dir);
             println!("home directory: {:?}", home_dir);

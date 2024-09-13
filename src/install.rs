@@ -78,7 +78,6 @@ fn collect_dotfiles<P: AsRef<Path>>(dotfiles_dir: P) -> Vec<PathBuf> {
             .filter_map(|entry| entry.ok())
             .map(|entry| entry.path())
             .filter(|path| !ignores.contains(path))
-            .filter_map(|path| path.canonicalize().ok())
         {
             if path.is_dir() {
                 dirs.push(path);
