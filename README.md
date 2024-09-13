@@ -1,4 +1,6 @@
 # dotfiles manager
+自分用の[dotfiles](https://github.com/knrew/dotfiles)を管理するためのツール．
+
 ## Install
 ```sh
 cargo install --git https://github.com/knrew/dotfiles_manager.git
