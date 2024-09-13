@@ -11,6 +11,12 @@ where
     Q: AsRef<Path>,
 {
     let files = collect_files(&home_dir);
+
+    if files.is_empty() {
+        println!("No files to backup.");
+        return;
+    }
+
     for file in files {
         copy_file(&dotfiles_dir, &home_dir, &file);
     }
