@@ -40,6 +40,7 @@ fn main() {
                 ),
         );
 
+    // for printing help
     let mut cmd = command.clone();
 
     match command.get_matches().subcommand() {
@@ -50,7 +51,7 @@ fn main() {
                 path.clone()
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
-                PathBuf::from(home_dir).join("dotfiles")
+                PathBuf::from(home_dir).join(".dotfiles")
             }
             .canonicalize()
             .unwrap_or_else(|_| panic!("dotfiles directory not found"));
@@ -69,7 +70,7 @@ fn main() {
                 path.join(today)
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
-                PathBuf::from(home_dir).join("backup").join(today)
+                PathBuf::from(home_dir).join(".backup_dotfiles").join(today)
             };
 
             println!("dotfiles directory: {:?}", dotfiles_dir);
@@ -86,7 +87,7 @@ fn main() {
                 path.clone()
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
-                PathBuf::from(home_dir).join("dotfiles")
+                PathBuf::from(home_dir).join(".dotfiles")
             };
 
             let home_dir = if let Some(path) = args.get_one::<PathBuf>("home_dir") {
