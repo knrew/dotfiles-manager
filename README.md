@@ -1,10 +1,9 @@
 # dotfiles manager
 ## Install
 ```sh
-git clone https://github.com/knrew/dotfiles_manager.git
-cd dotfiles_manager
-cargo install --path .
+cargo install --git https://github.com/knrew/dotfiles_manager.git
 ```
+
 ### without install
 インストールせずに使う場合は以下のようにする．
 
