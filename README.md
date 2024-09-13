@@ -1,22 +1,32 @@
-# dotfiles_installer
-
-## install
+# dotfiles manager
+## Install
 ```sh
 cargo install --path .
 ```
 
-## run
-### help
+### without install
+インストールせずに使う場合は以下のようにする．
+
 ```sh
-dotfiles_installer --help
+cargo run --release -- install <options>
 ```
 
-### run
+## How to use
+dotfileたちをインストールする．
+
 ```sh
-dotfiles_installer --dotfiles /path/to/dotfiles_dir --install /path/to/install_dir --backup /path/to/backup_dir
+dotfiles_manager install <dotfiles_dir> <install_dir> <backup_dir>
 ```
 
-### exsample
+例:
 ```sh
-dotfiles_installer --dotfiles ~/dotfiles --install ~/ --backup ~/.backup_dotfiles
+dotfiles_manager install ~/.dotfiles ~ ~/.backup_dotfiles
 ```
+
+dotfiles以下のファイルのシンボリックリンクを作成する
+dotfiles直下の以下のファイル/ディレクトリは除外される
+- /README.md
+- /.git
+- /.gitignore
+- /ex/
+    - インストールしないファイルはex以下に置く
