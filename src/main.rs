@@ -4,14 +4,14 @@ use std::{env, path::PathBuf};
 use chrono::Local;
 use clap::{arg, command, value_parser, Command};
 
-use dotfiles_manager::install::install;
+use dotfiles_manager::{backup::backup, install::install};
 
 fn main() {
     let command = command!()
         .subcommand(
             Command::new("install")
                 .arg(
-                    arg!([dotfiles_dir] "dotfiles [default: $HOME/dotfiles/]")
+                    arg!([dotfiles_dir] "dotfiles [default: $HOME/.dotfiles/]")
                         .value_parser(value_parser!(PathBuf))
                         .required(false),
                 )
@@ -26,7 +26,19 @@ fn main() {
                         .required(false),
                 ),
         )
-        .subcommand(Command::new("backup"));
+        .subcommand(
+            Command::new("backup")
+                .arg(
+                    arg!([dotfiles_dir] "dotfiles [default: $HOME/.dotfiles/]")
+                        .value_parser(value_parser!(PathBuf))
+                        .required(false),
+                )
+                .arg(
+                    arg!([home_dir] "home directory [default: $HOME/]")
+                        .value_parser(value_parser!(PathBuf))
+                        .required(false),
+                ),
+        );
 
     let mut cmd = command.clone();
 
@@ -45,7 +57,7 @@ fn main() {
                 path.clone()
             } else {
                 let home_dir = env::var("HOME").expect("HOME not found");
-                PathBuf::from(home_dir).join("install")
+                PathBuf::from(home_dir)
             };
 
             let today = Local::now().format("%Y%m%d_%H%M").to_string();
@@ -62,8 +74,24 @@ fn main() {
 
             install(dotfiles_dir, install_dir, backup_dir);
         }
-        Some(("backup", _)) => {
-            unimplemented!("backup");
+        Some(("backup", args)) => {
+            let dotfiles_dir = if let Some(path) = args.get_one::<PathBuf>("dotfiles_dir") {
+                path.clone()
+            } else {
+                let home_dir = env::var("HOME").expect("HOME not found");
+                PathBuf::from(home_dir).join("dotfiles")
+            };
+
+            let home_dir = if let Some(path) = args.get_one::<PathBuf>("home_dir") {
+                path.clone()
+            } else {
+                let home_dir = env::var("HOME").expect("HOME not found");
+                PathBuf::from(home_dir)
+            };
+
+            println!("dotfiles directory: {:?}", dotfiles_dir);
+            println!("home directory: {:?}", home_dir);
+            backup(dotfiles_dir, home_dir);
         }
         _ => {
             cmd.print_help().unwrap();
