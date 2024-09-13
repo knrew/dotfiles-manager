@@ -7,16 +7,27 @@ use dotfiles_manager::{backup::backup, install::install};
 
 fn main() {
     let home_dir = if let Ok(home_dir) = env::var("HOME") {
-        Some(PathBuf::from(home_dir).canonicalize().unwrap())
+        if let Ok(home_dir) = PathBuf::from(home_dir).canonicalize() {
+            Some(home_dir)
+        } else {
+            None
+        }
     } else {
         None
     };
+
     let default_dotfiles_dir = if let Some(ref home_dir) = home_dir {
-        Some(home_dir.join(".dotfiles").canonicalize().unwrap())
+        if let Ok(dotfiles_dir) = home_dir.join(".dotfiles").canonicalize() {
+            Some(dotfiles_dir)
+        } else {
+            None
+        }
     } else {
         None
     };
+
     let default_install_dir = home_dir.clone();
+
     let default_backup_dir = if let Some(ref home_dir) = home_dir {
         Some(home_dir.join(".backup_dotfiles"))
     } else {
