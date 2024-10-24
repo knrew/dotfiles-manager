@@ -3,7 +3,7 @@
 
 ## (dotfiles-managerの)install
 ```sh
-cargo install --git https://github.com/knrew/dotfiles_manager.git 
+cargo install --git https://github.com/knrew/dotfiles-manager.git 
 ```
 
 ### uninstall
