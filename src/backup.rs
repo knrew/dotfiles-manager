@@ -1,74 +1,109 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
+
+use crate::{default_dotfiles_dir, default_home_dir};
 
 const CHECK_LIST: [&str; 1] = [".config/nvim"];
 
-pub fn backup<P, Q>(dotfiles_dir: P, home_dir: Q)
-where
-    P: AsRef<Path>,
-    Q: AsRef<Path>,
-{
-    let files = collect_files(&home_dir);
+/// チェックリストで指定されているディレクトリ内のシンボリックリンクでないファイルをdotfilesにコピーする
+pub struct Backup {
+    /// ドットファイルたちが展開されているディレクトリ
+    /// default: ~/
+    home_dir: PathBuf,
 
-    if files.is_empty() {
-        println!("No files to backup.");
-        return;
-    }
-
-    for file in files {
-        copy_file(&dotfiles_dir, &home_dir, &file);
-    }
+    /// dotfilesがあるディレクトリ
+    /// default: ~/.dotfiles
+    dotfiles_dir: PathBuf,
 }
 
-fn copy_file<P, Q>(dotfiles_dir: P, home_dir: Q, file: &PathBuf)
-where
-    P: AsRef<Path>,
-    Q: AsRef<Path>,
-{
-    let file_name = file
-        .strip_prefix(home_dir.as_ref())
-        .unwrap_or_else(|_| panic!("failed to strip_prefix: {:?}", file));
+impl Backup {
+    pub fn new(home_dir: &Option<&PathBuf>, dotfiles_dir: &Option<&PathBuf>) -> Self {
+        // TODO: error処理
 
-    let to = dotfiles_dir.as_ref().join(file_name);
+        let home_dir = if let Some(home_dir) = home_dir {
+            home_dir.canonicalize().unwrap()
+        } else {
+            default_home_dir().unwrap()
+        };
 
-    if file.is_symlink() {
-        return;
-    }
+        let dotfiles_dir = if let Some(dotfiles_dir) = dotfiles_dir {
+            dotfiles_dir.canonicalize().unwrap()
+        } else {
+            default_dotfiles_dir().unwrap()
+        };
 
-    let parent = to
-        .parent()
-        .unwrap_or_else(|| panic!("failed to get parent: {:?}", to));
-    fs::create_dir_all(&parent)
-        .unwrap_or_else(|_| panic!("failed to create directory: {:?}", parent));
-    fs::copy(file, &to).unwrap_or_else(|_| panic!("failed to copy: {:?} -> {:?}", file, to));
-    println!("backup: {:?} -> {:?}", file, to);
-}
-
-fn collect_files<P: AsRef<Path>>(home_dir: P) -> Vec<PathBuf> {
-    let mut files = vec![];
-
-    let mut dirs = CHECK_LIST
-        .iter()
-        .map(|s| home_dir.as_ref().join(s))
-        .filter(|p| p.exists())
-        .collect::<Vec<_>>();
-
-    while let Some(dir) = dirs.pop() {
-        for path in fs::read_dir(&dir)
-            .unwrap_or_else(|_| panic!("failed to read directory: {:?}", dir))
-            .filter_map(|entry| entry.ok())
-            .map(|entry| entry.path())
-        {
-            if path.is_dir() {
-                dirs.push(path);
-            } else if path.is_symlink() {
-            } else if path.is_file() {
-                files.push(path);
-            }
+        Self {
+            home_dir,
+            dotfiles_dir,
         }
     }
 
-    files
+    pub fn backup(&self) {
+        println!("backing up new files...");
+
+        println!("dotfiles_dir: {:?}", self.dotfiles_dir);
+        println!("home_dir: {:?}", self.home_dir);
+
+        let files = self.collect_files();
+
+        if files.is_empty() {
+            println!("No files to backup.");
+            return;
+        }
+
+        for file in files {
+            self.copy_file(&file);
+        }
+    }
+
+    fn copy_file(&self, file: &PathBuf) {
+        // ホームディレクトリからの相対パス
+        let file_name = file
+            .strip_prefix(&self.home_dir)
+            .unwrap_or_else(|_| panic!("failed to strip_prefix: {:?}", file));
+
+        // dotfilesからの相対パス
+        let to = self.dotfiles_dir.join(file_name);
+
+        if file.is_symlink() {
+            return;
+        }
+
+        let parent = to
+            .parent()
+            .unwrap_or_else(|| panic!("failed to get parent: {:?}", to));
+        fs::create_dir_all(&parent)
+            .unwrap_or_else(|_| panic!("failed to create directory: {:?}", parent));
+
+        fs::copy(file, &to).unwrap_or_else(|_| panic!("failed to copy: {:?} -> {:?}", file, to));
+
+        println!("backup: {:?} -> {:?}", file, to);
+    }
+
+    fn collect_files(&self) -> Vec<PathBuf> {
+        let mut res = vec![];
+
+        let mut dirs = CHECK_LIST
+            .iter()
+            .map(|s| self.home_dir.join(s))
+            .filter(|p| p.exists())
+            .collect::<Vec<_>>();
+
+        while let Some(dir) = dirs.pop() {
+            for path in fs::read_dir(&dir)
+                .unwrap_or_else(|_| panic!("failed to read directory: {:?}", dir))
+                .map(|entry| entry.expect("failed to unwrap entry").path())
+                .filter(|path| !path.is_symlink())
+            {
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if path.is_file() {
+                    res.push(path.canonicalize().expect("failed to canonicalize"))
+                } else {
+                    eprintln!("unknown file type: {:?}", path);
+                }
+            }
+        }
+
+        res
+    }
 }

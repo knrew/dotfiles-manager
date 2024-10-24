@@ -17,10 +17,10 @@ cargo uninstall dotfiles-manager
 ```sh
 git clone https://github.com/knrew/dotfiles_manager.git
 cd dotfiles_manager
-cargo run --release -- install <options>
+cargo run --release -- <command> <options>
 ```
 
-## How to use
+## 使い方
 ### (dotfilesの)install
 dotfileたちをホームディレクトリに配置する．
 
@@ -35,6 +35,8 @@ dotfiles-manager install ~/.dotfiles ~/ ~/.backup_dotfiles
 ```
 
 dotfiles以下のファイルのシンボリックリンクを作成する．
+
+例: `~/.dotfiles/.config/i3/config` -> `~/.config/i3/config`
 
 以下のファイルは除外される.
 - `dotfiles/.git`
@@ -53,7 +55,6 @@ dotfiles-manager backup <dotfiles_dir> <home_dir>
 ```sh
 dotfiles-manager backup ~/.dotfiles/ ~/
 ```
-`home_dir`はinstallでいう`install_dir`
 
 確認するディレクトリは以下(適宜変更)
 - `.config/nvim`
