@@ -58,5 +58,5 @@ dotfiles-manager backup ~/.dotfiles/ ~/
 
 確認するディレクトリは以下(適宜変更)
 - `.config/nvim`
-
+- `.config.zsh`
 

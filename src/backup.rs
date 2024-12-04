@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use crate::{default_dotfiles_dir, default_home_dir};
 
-const CHECK_LIST: [&str; 1] = [".config/nvim"];
+const CHECK_LIST: [&str; 2] = [".config/nvim", ".config/zsh"];
 
 /// チェックリストで指定されているディレクトリ内のシンボリックリンクでないファイルをdotfilesにコピーする
 pub struct Backup {
