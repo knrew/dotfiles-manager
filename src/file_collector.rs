@@ -35,10 +35,8 @@ pub fn collect_files_and_links(path: impl AsRef<Path>) -> Result<(Vec<PathBuf>, 
             }
             FileKind::Dir => {
                 if let Ok(entries) = fs::read_dir(&path) {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            stack.push(entry.path());
-                        }
+                    for entry in entries.flatten() {
+                        stack.push(entry.path());
                     }
                 }
             }

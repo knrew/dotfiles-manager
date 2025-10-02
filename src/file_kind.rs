@@ -28,4 +28,3 @@ pub fn file_kind(path: &Path) -> Result<FileKind> {
         Err(e) => Err(e.into()),
     }
 }
-

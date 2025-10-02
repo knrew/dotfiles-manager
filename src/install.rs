@@ -135,5 +135,5 @@ fn is_symlink_pointing_to(link: &Path, path: &Path) -> Result<bool> {
 }
 
 fn is_empty_dir(path: &Path) -> Result<bool> {
-    Ok(fs::read_dir(&path)?.next().is_none())
+    Ok(fs::read_dir(path)?.next().is_none())
 }
