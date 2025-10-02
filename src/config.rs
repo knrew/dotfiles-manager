@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,12 @@ struct Toml {
 pub struct Config {
     pub home_dir: PathBuf,
     pub dotfiles_dir: PathBuf,
+
+    // バックアップは`backup_dir/YYYYmmdd_HHMM`以下に保存する．
     pub backup_dir: PathBuf,
+
+    // dotfiles/home/
+    pub dotfiles_home_dir: PathBuf,
 }
 
 impl Config {
@@ -55,28 +60,53 @@ impl Config {
             )
         })?;
 
-        let config = Config {
-            dotfiles_dir: dotfiles_dir.canonicalize().with_context(|| {
+        let dotfiles_dir = dotfiles_dir.canonicalize().with_context(|| {
+            format!(
+                "invalid dotfiles directory in config: {}",
+                dotfiles_dir.display()
+            )
+        })?;
+
+        if !dotfiles_dir.is_dir() {
+            return Err(anyhow!("{} is not directory.", dotfiles_dir.display()));
+        }
+
+        let home_dir = home_dir
+            .canonicalize()
+            .with_context(|| format!("invalid home directory in config: {}", home_dir.display()))?;
+
+        if !home_dir.is_dir() {
+            return Err(anyhow!("{} is not directory.", home_dir.display()));
+        }
+
+        let backup_dir = backup_dir
+            .canonicalize()
+            .with_context(|| {
                 format!(
-                    "invalid dotfiles directory in config: {}",
-                    dotfiles_dir.display()
+                    "invalid backup directory in config: {}",
+                    backup_dir.display()
                 )
-            })?,
+            })?
+            .join(Local::now().format("%Y%m%d_%H%M").to_string());
 
-            home_dir: home_dir.canonicalize().with_context(|| {
-                format!("invalid home directory in config: {}", home_dir.display())
-            })?,
+        if backup_dir.is_dir() {
+            eprintln!("[warning] {} already exists.", backup_dir.display());
+        }
 
-            // バックアップは`backup_dir/YYYYmmdd_HHMM`以下に保存する．
-            backup_dir: backup_dir
-                .canonicalize()
-                .with_context(|| {
-                    format!(
-                        "invalid backup directory in config: {}",
-                        backup_dir.display()
-                    )
-                })?
-                .join(Local::now().format("%Y%m%d_%H%M").to_string()),
+        let dotfiles_home_dir = dotfiles_dir
+            .join("home")
+            .canonicalize()
+            .with_context(|| format!("invalid path: {}/home", dotfiles_dir.display()))?;
+
+        if !dotfiles_home_dir.is_dir() {
+            return Err(anyhow!("{} is not directory.", dotfiles_home_dir.display()));
+        }
+
+        let config = Config {
+            dotfiles_dir,
+            home_dir,
+            backup_dir,
+            dotfiles_home_dir,
         };
 
         Ok(config)

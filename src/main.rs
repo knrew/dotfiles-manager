@@ -23,7 +23,9 @@ enum Command {
         dry_run: bool,
     },
     Add {},
-    Remove {},
+    Remove {
+        path: PathBuf,
+    },
     Clean {},
     List {},
     Status {},
@@ -59,7 +61,8 @@ fn main() -> Result<()> {
         Command::Add {} => {
             unimplemented!();
         }
-        Command::Remove {} => {
+        Command::Remove { path } => {
+            eprintln!("{}", path.display());
             unimplemented!();
         }
         Command::Clean {} => {
