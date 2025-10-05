@@ -20,13 +20,8 @@ pub fn remove(executor: impl Executor, path: impl AsRef<Path>) -> Result<()> {
 
     let to = executor.install_path(&path)?;
 
-    match file_kind(&to) {
-        FileKind::Symlink => {
-            if is_symlink_pointing_to(&to, &path) || is_broken_link(&to) {
-                executor.remove_symlink_from_home(&to)?;
-            }
-        }
-        _ => {}
+    if is_symlink_pointing_to(&to, &path) || is_broken_link(&to) {
+        executor.remove_symlink_from_home(&to)?;
     }
 
     executor.remove_file_from_dotfiles_home(path)?;

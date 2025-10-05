@@ -11,7 +11,7 @@ pub enum FileKind {
     // 存在はする．
     Unknown,
 
-   // 存在しないパス．
+    // 存在しないパス．
     NotFound,
 
     // 上記のどれにも当てはまらない場合．
