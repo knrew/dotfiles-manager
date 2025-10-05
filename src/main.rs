@@ -59,14 +59,23 @@ fn main() -> Result<()> {
     // 1. コマンドオプション`--config`で指定されたファイル
     // 2. 環境変数`DOTKOKE_CONFIG`で指定されたファイル
     // 3. `$HOME/.config/dotkoke_config.toml`
+    // 4. `$HOME/.config/dotkoke/dotkoke_config.toml`
     let config_file_path = cli
         .config_file
         .or_else(|| env::var("DOTKOKE_CONFIG").ok().map(PathBuf::from))
         .or_else(|| {
+            // $HOME/.config/dotkoke_config.toml
             env::var("HOME")
                 .ok()
                 .map(PathBuf::from)
                 .map(|p| p.join(".config/dotkoke_config.toml"))
+        })
+        .or_else(|| {
+            // $HOME/.config/dotkoke/dotkoke_config.toml
+            env::var("HOME")
+                .ok()
+                .map(PathBuf::from)
+                .map(|p| p.join(".config/dotkoke/dotkoke_config.toml"))
         })
         .ok_or_else(|| anyhow!("config file not found."))?;
 
