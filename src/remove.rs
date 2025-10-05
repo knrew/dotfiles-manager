@@ -4,7 +4,7 @@ use anyhow::{Context, Result, anyhow};
 
 use crate::{executor::Executor, file_kind::*};
 
-pub fn remove(executor: &impl Executor, path: impl AsRef<Path>) -> Result<()> {
+pub fn remove(executor: impl Executor, path: impl AsRef<Path>) -> Result<()> {
     let path = path.as_ref();
     let path = path
         .canonicalize()

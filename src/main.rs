@@ -3,12 +3,7 @@ use std::{env, path::PathBuf};
 use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
 
-use dotkoke::{
-    config::Config,
-    executor::{DryExecutor, RealExecutor},
-    install::install,
-    remove::remove,
-};
+use dotkoke::*;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -22,20 +17,38 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// unimplemented
     Init {},
+
+    /// dotifiles/home以下のファイルのリンクを$HOMEに貼る．
     Install {
         #[arg(long)]
         dry_run: bool,
     },
-    Add {},
+
+    /// `path`をdotfilesに加え管理対象に加える．
+    Add {
+        #[arg(long)]
+        dry_run: bool,
+
+        path: PathBuf,
+    },
+
+    /// `path`をdotfilesから削除し管理対象から外す．
     Remove {
         #[arg(long)]
         dry_run: bool,
 
         path: PathBuf,
     },
+
+    /// unimplemented
     Clean {},
+
+    /// 管理対象ファイル一覧を表示する．
     List {},
+
+    /// unimplemented
     Status {},
 }
 
@@ -65,26 +78,30 @@ fn main() -> Result<()> {
         }
         Command::Install { dry_run } => {
             if dry_run {
-                install(&DryExecutor::new(config))?;
+                install(DryExecutor::new(config))?;
             } else {
-                install(&RealExecutor::new(config))?;
+                install(RealExecutor::new(config))?;
             }
         }
-        Command::Add {} => {
-            unimplemented!();
+        Command::Add { path, dry_run } => {
+            if dry_run {
+                add(DryExecutor::new(config), path)?;
+            } else {
+                add(RealExecutor::new(config), path)?;
+            }
         }
         Command::Remove { path, dry_run } => {
             if dry_run {
-                remove(&DryExecutor::new(config), path)?;
+                remove(DryExecutor::new(config), path)?;
             } else {
-                remove(&RealExecutor::new(config), path)?;
+                remove(RealExecutor::new(config), path)?;
             }
         }
         Command::Clean {} => {
             unimplemented!();
         }
         Command::List {} => {
-            unimplemented!();
+            list(config)?;
         }
         Command::Status {} => {
             unimplemented!();

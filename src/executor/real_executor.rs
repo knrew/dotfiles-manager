@@ -59,4 +59,8 @@ impl Executor for RealExecutor {
     fn remove_file_from_dotfiles_home(&self, path: impl AsRef<Path>) -> Result<()> {
         remove_file(path)
     }
+
+    fn copy(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
+        copy(from, to)
+    }
 }

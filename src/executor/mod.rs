@@ -21,16 +21,29 @@ pub trait Executor: HasConfig {
     }
 
     /// dotfiles レポジトリからの相対パス(例: ~/.dotfiles/foo/bar -> foo/bar)
-    fn repo_rel(&self, path: impl AsRef<Path>) -> Result<PathBuf> {
+    fn repo_rel_from_dotfiles_home(&self, path: impl AsRef<Path>) -> Result<PathBuf> {
         Ok(path
             .as_ref()
             .strip_prefix(self.dotfiles_home_dir())?
             .to_path_buf())
     }
 
+    fn repo_rel_from_home(&self, path: impl AsRef<Path>) -> Result<PathBuf> {
+        Ok(path.as_ref().strip_prefix(self.home_dir())?.to_path_buf())
+    }
+
     /// レポジトリ内の`path`を$HOME に"インストール"した場合の絶対パス
     fn install_path(&self, path: impl AsRef<Path>) -> Result<PathBuf> {
-        Ok(self.home_dir().join(self.repo_rel(path)?))
+        Ok(self
+            .home_dir()
+            .join(self.repo_rel_from_dotfiles_home(path)?))
+    }
+
+    /// $HOME以下のpathに対応するdotfiles/home以下の絶対パス
+    fn entity_path(&self, path: impl AsRef<Path>) -> Result<PathBuf> {
+        Ok(self
+            .dotfiles_home_dir()
+            .join(self.repo_rel_from_home(path)?))
     }
 
     /// `from`のリンクを`to`につくる．
@@ -65,8 +78,7 @@ pub trait Executor: HasConfig {
         Ok(())
     }
 
-    // `from`を`to`にrename(move)する．
-    // fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()>;
+    fn copy(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()>;
 }
 
 pub mod dry_executor;

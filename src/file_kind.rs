@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{fs, os::unix::fs::MetadataExt, path::Path};
 
 pub enum FileKind {
@@ -9,7 +11,7 @@ pub enum FileKind {
     // 存在はする．
     Unknown,
 
-    // 存在しないパス．
+   // 存在しないパス．
     NotFound,
 
     // 上記のどれにも当てはまらない場合．

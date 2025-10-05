@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use crate::{executor::Executor, file_collector::*, file_kind::*};
 
-pub fn install(executor: &impl Executor) -> Result<()> {
+pub fn install(executor: impl Executor) -> Result<()> {
     let (files, links) = collect_files_and_links(executor.dotfiles_home_dir())?;
 
     if !links.is_empty() {

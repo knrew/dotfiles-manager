@@ -60,4 +60,13 @@ impl Executor for DryExecutor {
         println!("[dry-run] rm -rf {}", path.as_ref().display());
         Ok(())
     }
+
+    fn copy(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
+        println!(
+            "[dry-run] cp {} -> {}",
+            from.as_ref().display(),
+            to.as_ref().display()
+        );
+        Ok(())
+    }
 }
