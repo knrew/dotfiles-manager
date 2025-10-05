@@ -1,69 +1,52 @@
 use anyhow::Result;
 
-use crate::{
-    config::Config, file_collector::collect_files_and_links, file_kind::*, file_operations::*,
-};
+use crate::{executor::Executor, file_collector::*, file_kind::*};
 
-pub fn install(config: Config) -> Result<()> {
-    let Config {
-        dotfiles_dir: _dotfiles_dir,
-        home_dir,
-        backup_dir,
-        dotfiles_home_dir,
-    } = config;
-
-    let (files, links) = collect_files_and_links(&dotfiles_home_dir)?;
+pub fn install(executor: &impl Executor) -> Result<()> {
+    let (files, links) = collect_files_and_links(&executor.dotfiles_home_dir())?;
 
     if !links.is_empty() {
         eprintln!(
             "[warning] symlink(s) exist in {} (they will be ignored).",
-            dotfiles_home_dir.display()
+            executor.dotfiles_home_dir().display()
         );
     }
-    let _ = links;
+    drop(links);
 
     for from in files {
-        assert!(!from.is_symlink());
+        assert!(!is_symlink(&from));
 
-        let suffix = from.strip_prefix(&dotfiles_home_dir)?;
-        let to = home_dir.join(suffix);
+        let to = executor.install_path(&from)?;
 
         // fromのリンクをtoにつくる．
 
-        // すでに正しいリンクが貼られていたらスキップ．
-        if is_symlink_pointing_to(&to, &from)? {
-            println!(
-                "skipped (already linked): {} -> {}",
-                from.display(),
-                to.display()
-            );
+        if is_symlink_pointing_to(&to, &from) {
+            executor.skip_link_creating(&from, &to)?;
             continue;
         }
 
-        match file_kind(&to)? {
-            FileKind::Dir => {
-                // ディレクトリは削除．
-                // TODO: 将来的にはバックアップをとるよう修正．
-                remove_dir_all(&to)?;
-            }
+        match file_kind(&to) {
             FileKind::Symlink => {
-                // 既存のリンクは削除．
-                remove_link(&to)?;
+                executor.remove_symlink(&to)?;
             }
             FileKind::File => {
-                // 既存のファイルはバックアップを作成．
-                let backup = backup_dir.join(suffix);
-                rename(&to, &backup)?;
+                executor.remove_file(&to)?;
+            }
+            FileKind::Dir => {
+                // TODO: 将来的にはバックアップをとるよう修正予定．
+                executor.remove_dir_all(&to)?;
             }
             FileKind::Unknown => {
-                eprintln!("[warning] unknown file type: {}", to.display());
-                remove_unknown(&to)?
+                executor.remove_unknown_path(&to)?;
             }
             FileKind::NotFound => {}
+            FileKind::Error => {
+                executor.warn_cannot_determine(&to)?;
+                continue;
+            }
         }
 
-        create_symlink(&from, &to)?;
-        println!("created link: {} -> {}", from.display(), to.display());
+        executor.create_symlink(&from, &to)?;
     }
 
     Ok(())

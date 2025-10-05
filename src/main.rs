@@ -3,10 +3,14 @@ use std::{env, path::PathBuf};
 use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
 
-use dotkoke::{config::Config, install::install};
+use dotkoke::{
+    config::Config,
+    executor::{DryExecutor, RealExecutor},
+    install::install,
+};
 
 #[derive(Debug, Parser)]
-#[command(author, version, about, long_about=None)]
+#[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(long = "config", global = true)]
     config_file: Option<PathBuf>,
@@ -55,14 +59,17 @@ fn main() -> Result<()> {
         Command::Init {} => {
             unimplemented!();
         }
-        Command::Install { .. } => {
-            install(config)?;
+        Command::Install { dry_run } => {
+            if dry_run {
+                install(&DryExecutor::new(config))?;
+            } else {
+                install(&RealExecutor::new(config))?;
+            }
         }
         Command::Add {} => {
             unimplemented!();
         }
-        Command::Remove { path } => {
-            eprintln!("{}", path.display());
+        Command::Remove { .. } => {
             unimplemented!();
         }
         Command::Clean {} => {

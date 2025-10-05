@@ -28,12 +28,17 @@ struct Toml {
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    // $HOME
     pub home_dir: PathBuf,
-    pub dotfiles_dir: PathBuf,
+
+    // 使うことなさそうなのでprivate
+    #[allow(dead_code)]
+    dotfiles_dir: PathBuf,
 
     // バックアップは`backup_dir/YYYYmmdd_HHMM`以下に保存する．
     pub backup_dir: PathBuf,
 
+    // $HOMEのミラー．
     // dotfiles/home/
     pub dotfiles_home_dir: PathBuf,
 }

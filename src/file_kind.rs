@@ -1,71 +1,96 @@
-use std::{fs, path::Path};
-
-use anyhow::Result;
+use std::{fs, os::unix::fs::MetadataExt, path::Path};
 
 pub enum FileKind {
+    Symlink,
     File,
     Dir,
-    Symlink,
+
+    // 不明な(上記以外の)ファイルタイプ．
+    // 存在はする．
     Unknown,
+
+    // 存在しないパス．
     NotFound,
+
+    // 上記のどれにも当てはまらない場合．
+    Error,
 }
 
-pub fn file_kind(path: &Path) -> Result<FileKind> {
+pub fn file_kind(path: impl AsRef<Path>) -> FileKind {
     match fs::symlink_metadata(path) {
         Ok(meta) => {
             let ft = meta.file_type();
             if ft.is_symlink() {
-                Ok(FileKind::Symlink)
+                FileKind::Symlink
             } else if ft.is_dir() {
-                Ok(FileKind::Dir)
+                FileKind::Dir
             } else if ft.is_file() {
-                Ok(FileKind::File)
+                FileKind::File
             } else {
-                Ok(FileKind::Unknown)
+                FileKind::Unknown
             }
         }
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(FileKind::NotFound),
-        Err(e) => Err(e.into()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => FileKind::NotFound,
+        Err(_) => FileKind::Error,
     }
 }
 
-pub fn is_file(path: &Path) -> Result<bool> {
-    Ok(matches!(file_kind(path)?, FileKind::File))
+pub fn is_symlink(path: impl AsRef<Path>) -> bool {
+    matches!(file_kind(path), FileKind::Symlink)
 }
 
-pub fn is_dir(path: &Path) -> Result<bool> {
-    Ok(matches!(file_kind(path)?, FileKind::Dir))
+pub fn is_file(path: impl AsRef<Path>) -> bool {
+    matches!(file_kind(path), FileKind::File)
 }
 
-pub fn is_symlink(path: &Path) -> Result<bool> {
-    Ok(matches!(file_kind(path)?, FileKind::Symlink))
+pub fn is_dir(path: impl AsRef<Path>) -> bool {
+    matches!(file_kind(path), FileKind::Dir)
 }
 
-pub fn is_unknown(path: &Path) -> Result<bool> {
-    Ok(matches!(file_kind(path)?, FileKind::Unknown))
+pub fn is_unknown(path: impl AsRef<Path>) -> bool {
+    matches!(file_kind(path), FileKind::Unknown)
 }
 
-/// linkがpathを指しているか判定する．
-pub fn is_symlink_pointing_to(link: &Path, path: &Path) -> Result<bool> {
-    let meta = match fs::symlink_metadata(link) {
-        Ok(m) => m,
-        Err(_) => return Ok(false),
+pub fn exists(path: impl AsRef<Path>) -> bool {
+    !matches!(file_kind(path), FileKind::NotFound)
+}
+
+pub fn is_error_path(path: impl AsRef<Path>) -> bool {
+    matches!(file_kind(path), FileKind::Error)
+}
+
+/// `path`が壊れたシンボリックリンクならtrue
+pub fn is_broken_link(path: impl AsRef<Path>) -> bool {
+    let path = path.as_ref();
+    match fs::symlink_metadata(path) {
+        Ok(meta) if meta.file_type().is_symlink() => fs::metadata(path).is_err(),
+        _ => false,
+    }
+}
+
+/// `link`がsymlinkでその参照先と`target`が同じ実体を指すならtrue，
+/// それ以外の場合false．
+pub fn is_symlink_pointing_to(link: impl AsRef<Path>, target: impl AsRef<Path>) -> bool {
+    let link = link.as_ref();
+    let target = target.as_ref();
+
+    let Ok(raw_destination) = fs::read_link(link) else {
+        return false;
     };
 
-    if !meta.file_type().is_symlink() {
-        return Ok(false);
-    }
-
-    let target = fs::read_link(link)?;
-
-    let target_abs = if target.is_absolute() {
-        target
+    let destination_abs = if raw_destination.is_absolute() {
+        raw_destination
     } else {
-        link.parent().unwrap_or(Path::new("")).join(target)
+        link.parent()
+            .expect("link should have parent")
+            .join(raw_destination)
     };
 
-    let lhs = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    let rhs = target_abs.canonicalize().unwrap_or(target_abs);
-
-    Ok(lhs == rhs)
+    match (fs::metadata(&destination_abs), fs::metadata(target)) {
+        (Ok(destination_meta), Ok(target_meta)) => {
+            destination_meta.dev() == target_meta.dev()
+                && destination_meta.ino() == target_meta.ino()
+        }
+        _ => false,
+    }
 }
