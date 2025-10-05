@@ -12,15 +12,15 @@ pub struct RealExecutor {
     config: Config,
 }
 
-impl HasConfig for RealExecutor {
-    fn config(&self) -> &Config {
-        &self.config
-    }
-}
-
 impl RealExecutor {
     pub fn new(config: Config) -> Self {
         Self { config }
+    }
+}
+
+impl HasConfig for RealExecutor {
+    fn config(&self) -> &Config {
+        &self.config
     }
 }
 
@@ -35,29 +35,28 @@ impl Executor for RealExecutor {
         create_symlink(from, to)
     }
 
-    fn remove_symlink(&self, path: impl AsRef<Path>) -> Result<()> {
+    fn remove_symlink_from_home(&self, path: impl AsRef<Path>) -> Result<()> {
         remove_symlink(path)
     }
 
     // remove(rename)
-    fn remove_file(&self, path: impl AsRef<Path>) -> Result<()> {
+    fn remove_file_from_home(&self, path: impl AsRef<Path>) -> Result<()> {
         let path = path.as_ref();
         let suffix = path.strip_prefix(self.home_dir())?;
         let backup = self.backup_dir().join(suffix);
-        self.rename(path, &backup)?;
+        rename(path, &backup)?;
         Ok(())
     }
 
-    fn remove_dir_all(&self, path: impl AsRef<Path>) -> Result<()> {
+    fn remove_dir_all_from_home(&self, path: impl AsRef<Path>) -> Result<()> {
         remove_dir_all(path)
     }
 
-    fn remove_unknown_path(&self, path: impl AsRef<Path>) -> Result<()> {
+    fn remove_unknown_path_from_home(&self, path: impl AsRef<Path>) -> Result<()> {
         remove_unknown_path(path)
     }
 
-    /// `from`を`to`にrename(move)する．
-    fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
-        rename(from, to)
+    fn remove_file_from_dotfiles_home(&self, path: impl AsRef<Path>) -> Result<()> {
+        remove_file(path)
     }
 }

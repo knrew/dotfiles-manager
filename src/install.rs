@@ -27,17 +27,17 @@ pub fn install(executor: &impl Executor) -> Result<()> {
 
         match file_kind(&to) {
             FileKind::Symlink => {
-                executor.remove_symlink(&to)?;
+                executor.remove_symlink_from_home(&to)?;
             }
             FileKind::File => {
-                executor.remove_file(&to)?;
+                executor.remove_file_from_home(&to)?;
             }
             FileKind::Dir => {
                 // TODO: 将来的にはバックアップをとるよう修正予定．
-                executor.remove_dir_all(&to)?;
+                executor.remove_dir_all_from_home(&to)?;
             }
             FileKind::Unknown => {
-                executor.remove_unknown_path(&to)?;
+                executor.remove_unknown_path_from_home(&to)?;
             }
             FileKind::NotFound => {}
             FileKind::Error => {

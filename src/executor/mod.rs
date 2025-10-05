@@ -46,14 +46,16 @@ pub trait Executor: HasConfig {
         Ok(())
     }
 
-    fn remove_symlink(&self, path: impl AsRef<Path>) -> Result<()>;
+    fn remove_symlink_from_home(&self, path: impl AsRef<Path>) -> Result<()>;
 
     // renameを含む．
-    fn remove_file(&self, path: impl AsRef<Path>) -> Result<()>;
+    fn remove_file_from_home(&self, path: impl AsRef<Path>) -> Result<()>;
 
-    fn remove_dir_all(&self, path: impl AsRef<Path>) -> Result<()>;
+    fn remove_dir_all_from_home(&self, path: impl AsRef<Path>) -> Result<()>;
 
-    fn remove_unknown_path(&self, path: impl AsRef<Path>) -> Result<()>;
+    fn remove_unknown_path_from_home(&self, path: impl AsRef<Path>) -> Result<()>;
+
+    fn remove_file_from_dotfiles_home(&self, path: impl AsRef<Path>) -> Result<()>;
 
     fn warn_cannot_determine(&self, path: impl AsRef<Path>) -> Result<()> {
         eprintln!(
@@ -63,8 +65,8 @@ pub trait Executor: HasConfig {
         Ok(())
     }
 
-    /// `from`を`to`にrename(move)する．
-    fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()>;
+    // `from`を`to`にrename(move)する．
+    // fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()>;
 }
 
 pub mod dry_executor;

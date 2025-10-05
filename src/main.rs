@@ -7,6 +7,7 @@ use dotkoke::{
     config::Config,
     executor::{DryExecutor, RealExecutor},
     install::install,
+    remove::remove,
 };
 
 #[derive(Debug, Parser)]
@@ -28,6 +29,9 @@ enum Command {
     },
     Add {},
     Remove {
+        #[arg(long)]
+        dry_run: bool,
+
         path: PathBuf,
     },
     Clean {},
@@ -69,8 +73,12 @@ fn main() -> Result<()> {
         Command::Add {} => {
             unimplemented!();
         }
-        Command::Remove { .. } => {
-            unimplemented!();
+        Command::Remove { path, dry_run } => {
+            if dry_run {
+                remove(&DryExecutor::new(config), path)?;
+            } else {
+                remove(&RealExecutor::new(config), path)?;
+            }
         }
         Command::Clean {} => {
             unimplemented!();
