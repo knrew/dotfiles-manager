@@ -22,7 +22,7 @@ pub fn remove_file(path: impl AsRef<Path>) -> Result<()> {
         return Err(anyhow!("{} is not a file.", path.display()));
     }
 
-    fs::remove_file(&path).with_context(|| format!("failed to remove file: {}", path.display()))?;
+    fs::remove_file(path).with_context(|| format!("failed to remove file: {}", path.display()))?;
 
     Ok(())
 }
@@ -36,7 +36,7 @@ pub fn remove_symlink(path: impl AsRef<Path>) -> Result<()> {
         return Err(anyhow!("{} is not a symlink.", path.display()));
     }
 
-    fs::remove_file(&path)
+    fs::remove_file(path)
         .with_context(|| format!("failed to remove symlink: {}", path.display()))?;
 
     Ok(())
@@ -51,7 +51,7 @@ pub fn remove_unknown_path(path: impl AsRef<Path>) -> Result<()> {
         return Err(anyhow!("{} is not an unknown path.", path.display()));
     }
 
-    fs::remove_file(&path)
+    fs::remove_file(path)
         .with_context(|| format!("failed to remove unknown path: {}", path.display()))?;
 
     Ok(())
@@ -105,8 +105,8 @@ pub fn copy(from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
 pub fn create_symlink(from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
     let from = from.as_ref();
     let to = to.as_ref();
-    create_parent_dir(&to)?;
-    unix::fs::symlink(&from, &to).with_context(|| {
+    create_parent_dir(to)?;
+    unix::fs::symlink(from, to).with_context(|| {
         format!(
             "failed to create link: {} -> {}",
             from.display(),
