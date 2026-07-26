@@ -20,15 +20,16 @@ source tree の通常ファイルを destination tree へ反映する。
 dotkoke は以下のコマンドを提供する。
 
 ```text
-dotkoke init [--config <PATH>] [--dry-run]
+dotkoke init [--dry-run]
 dotkoke init --print
-dotkoke install [--dry-run]
-dotkoke add [--dry-run] [--install] [--update] <PATH>...
-dotkoke remove [--dry-run] <PATH>...
-dotkoke status
+dotkoke install [--config <PATH>] [--dry-run]
+dotkoke add [--config <PATH>] [--dry-run] [--install | --update] <PATH>...
+dotkoke remove [--config <PATH>] [--dry-run] <PATH>...
+dotkoke status [--config <PATH>]
 ```
 
-`list` と `clean` はこの仕様の対象外である。
+`list` と `clean` は提供しない。
+この仕様に定義しないコマンドは CLI に存在しない。
 
 CLI の help、output、log、error message は英語で表示する。
 この仕様文書の本文は日本語で記述する。
@@ -79,6 +80,9 @@ absolute path でなければならない。
 存在する場合は directory でなければならない。
 
 `paths.destination` と `source root` が同じ directory であってはならない。
+`paths.destination` が `source root` の配下にあってもならない。
+`source root` が `paths.destination` の配下にある構成は許容する。
+これらの判定は canonical path で行う。
 
 ### Source Settings
 
@@ -121,8 +125,13 @@ absolute path、空文字、`.`、`..` を含む path は configuration error �
 placement rule が存在しない managed file は `placement.default_method` を使う。
 
 `placement.rules.path` が `source.ignore` の path と同じ、または `source.ignore` の path を directory とみなした subtree 配下にある場合は configuration error とする。
+これ以外では、どの managed file にも一致しない placement rule は configuration error にしない。
+rule の path が存在しない場合や directory を指す場合も同様である。
 
 ### Config Discovery
+
+config discovery は config を読み込むコマンド `install`、`add`、`remove`、`status` に適用される。
+`init` は config を読み込まない。
 
 設定ファイルは以下の優先順位で探索する。
 
@@ -134,8 +143,14 @@ placement rule が存在しない managed file は `placement.default_method` �
 
 `--config` または `DOTKOKE_CONFIG` で指定された path が存在しない場合は error とする。
 指定された path が file でない場合も error とする。
+`--config` または `DOTKOKE_CONFIG` に relative path が指定された場合は current working directory 基準で解決する。
+`DOTKOKE_CONFIG` が空文字の場合は未設定として扱い、次の探索へ進む。
+3 と 4 の探索先の path が存在して file でない場合も error とし、次の探索へ進まない。
 
 `XDG_CONFIG_HOME` が未設定、空文字、または relative path の場合は無視し、`$HOME/.config/dotkoke/config.toml` の探索へ進む。
+
+`HOME` が未設定、空文字、または relative path の場合、`$HOME/.config/dotkoke/config.toml` の探索と fallback config は使えない。
+探索がこれらの段階に到達した場合は error とする。
 
 fallback config は以下と同等である。
 
@@ -154,11 +169,29 @@ default_method = "symlink"
 
 fallback config の path は実行時に展開済み absolute path として扱う。
 
+## Path Resolution
+
+path の同一性判定と包含判定は canonical path で行う。
+
+`paths.dotfiles`、`paths.destination`、`source root` は config 読み込み時に canonicalize する。
+`paths.backup` は存在する場合は canonicalize し、存在しない場合は指定された absolute path をそのまま backup root として使う。
+
+`add` と `remove` の `<PATH>` は、存在と file kind を確認したうえで canonicalize してから包含判定を行う。
+`<PATH>` 自体が symlink の場合は canonicalize せず、各コマンドの規定に従って除外する。
+`<PATH>` の親 path に含まれる symlink は canonicalize で解決する。
+
+存在しない可能性のある path は canonicalize しない。
+managed file の destination path は、canonical な destination root に source-relative path を連結した path である。
+backup path は、backup set directory に destination-relative path を連結した path である。
+destination path とその親 path の検査は、symlink を辿らず path component 単位で行う。
+
+path の文字列比較は byte 単位で行い、filesystem の case-insensitivity は考慮しない。
+
 ## Managed Files
 
 dotkoke は `source root` 配下を再帰的に走査する。
 `source.ignore` に一致する path は走査対象から除外する。
-excluded directory の中は走査しない。
+excluded path が directory の場合、その中は走査しない。
 
 通常ファイルだけを managed file とする。
 directory は走査対象であり、managed file ではない。
@@ -176,22 +209,27 @@ managed file の処理順は source-relative path 昇順で安定させる。
 
 ### symlink
 
-`symlink` は destination path に managed file への symbolic link を作成する。
+`symlink` は destination path に managed file への symlink を作成する。
 destination path の symlink が managed file の canonical path を指している場合、desired state と一致しているとみなす。
 
 symlink の一致判定では symlink の target を解決して managed file の canonical path と比較する。
+target を解決できない symlink は broken symlink であり、一致とみなさない。
 managed file と同じ inode を持つ別 path を指す symlink は一致とみなさない。
 
 ### copy
 
 `copy` は destination path に通常ファイルとして managed file をコピーする。
+コピーは managed file の内容 bytes と permission bits を複製する。
 destination path が通常ファイルで、内容 bytes と permission bits が managed file と一致している場合、desired state と一致しているとみなす。
 
+owner、group、xattr、ACL は複製も比較もしない。
 mtime は一致判定に使わない。
 
 ## Destination and Conflicts
 
 destination path が存在せず、親 directory が作成可能な場合、`install` は desired state を作成する。
+親 path が作成可能とは、親 path の途中に install を妨げる path がないことを指す。
+書き込み権限は plan では検査せず、権限による作成失敗は plan 実行中の失敗として扱う。
 
 destination path が desired state と一致する場合、`install` は何もしない。
 
@@ -204,6 +242,7 @@ symlink は target を辿らず、symlink object 自体を backup path へ移動
 相対 symlink の raw target は保持される。
 
 destination path の親 path の途中に通常ファイル、symlink、unknown file type、判定不能 path がある場合、その managed file は install できない。
+destination path 自体の存在、file kind、または一致判定が判定不能の場合も、その managed file は install できない。
 `status` では `blocked` として表示する。
 `install` では error とし、部分的な filesystem 変更を残さない。
 
@@ -211,9 +250,16 @@ destination path の親 path の途中に通常ファイル、symlink、unknown 
 
 backup root は `install` または `add --install` が既存 destination path を置き換える場合に使う。
 
+backup root は destination root と同じ filesystem 上になければならない。
+backup path への移動は rename で行い、copy による代替は行わない。
+backup を伴う plan では、plan 作成時に backup root が destination root と同じ filesystem 上にあることを検査し、異なる場合は error とし、filesystem を変更しない。
+backup root が存在しない場合は、存在する最も近い祖先 directory の filesystem で判定する。
+backup を伴わない実行ではこの検査を行わない。
+
 1 回の実行につき 1 つの backup set directory を使う。
 backup set directory の名前は local time の `YYYYmmdd_HHMMSS` とする。
 同名 directory が既に存在する場合は `YYYYmmdd_HHMMSS-1`, `YYYYmmdd_HHMMSS-2` のように suffix を付ける。
+backup set directory の名前と suffix は plan 作成時に決定する。
 
 backup path は destination-relative path を backup set directory 配下に維持する。
 
@@ -239,17 +285,29 @@ dry-run では backup set directory を作成しない。
 ### init
 
 ```text
-dotkoke init [--config <PATH>] [--dry-run]
+dotkoke init [--dry-run]
 dotkoke init --print
 ```
 
 `init` は config file と `source root` directory を作成する。
+`init` は config を読み込まない。
 
-`--config <PATH>` が指定された場合はその path に config file を作成する。
-指定されない場合は `$XDG_CONFIG_HOME/dotkoke/config.toml` を作成先とする。
-`XDG_CONFIG_HOME` が未設定、空文字、または relative path の場合は `$HOME/.config/dotkoke/config.toml` を作成先とする。
+config file の作成先は以下の順で決める。
 
-既存 config file は上書きしない。
+1. environment variable `DOTKOKE_CONFIG` が設定されている場合はその path。
+2. `$XDG_CONFIG_HOME/dotkoke/config.toml`。
+3. `XDG_CONFIG_HOME` が未設定、空文字、または relative path の場合は `$HOME/.config/dotkoke/config.toml`。
+
+`DOTKOKE_CONFIG` が空文字の場合は未設定として扱う。
+`DOTKOKE_CONFIG` が relative path の場合は current working directory 基準で解決する。
+
+作成先は config discovery が config file を発見する path と一致させる。
+同じ環境変数と current working directory のもとで `--config` を指定しない直後の他コマンドは、`init` が作成した config file を発見する。
+
+`HOME` が未設定、空文字、または relative path の場合、`init` は error とする。
+生成される config の内容が `$HOME` に依存するためである。
+
+作成先に config file が既に存在する場合は error とし、filesystem を変更しない。
 config file の親 directory は必要なら作成する。
 
 生成される config は fallback config と同等である。
@@ -262,17 +320,19 @@ config には環境変数や `~` を書かない。
 
 `--dry-run` は作成予定を表示し、filesystem を変更しない。
 
-`--print` は fallback config を stdout に出力するだけで、filesystem を変更しない。
-`--print` は `--config` および `--dry-run` と併用できない。
+`--print` は `$HOME` 展開済みの fallback config を stdout に出力するだけで、filesystem を変更しない。
+`HOME` の error 規定は `--print` にも適用する。
+`--print` は `--dry-run` と併用できない。
 
 ### install
 
 ```text
-dotkoke install [--dry-run]
+dotkoke install [--config <PATH>] [--dry-run]
 ```
 
 `install` は source tree 全体を destination root に反映する。
 `source.ignore` に一致する path は plan に含めず、destination path の作成、copy、link、backup path への移動を行わない。
+destination path が `source root` や backup root 自身、またはその配下になる managed file がある場合は、plan 作成時の error とし、filesystem を変更しない。
 各 managed file の placement method は placement rule と default method から決定する。
 
 `install` は実行前に plan を作成する。
@@ -283,11 +343,12 @@ plan 作成時に検出可能な error がある場合、filesystem を変更し
 ### add
 
 ```text
-dotkoke add [--dry-run] [--install] [--update] <PATH>...
+dotkoke add [--config <PATH>] [--dry-run] [--install | --update] <PATH>...
 ```
 
 `add` は destination root 配下の通常ファイルを `source root` 配下へ取り込む。
 `<PATH>...` は 1 個以上指定する。
+指定された path が存在しない場合は error とする。
 
 file が指定された場合、その file を対象にする。
 directory が指定された場合、その配下を再帰走査し、通常ファイルを対象にする。
@@ -297,6 +358,9 @@ unknown file type は warning を出して対象から除外する。
 
 relative path が指定された場合は current working directory 基準で解決する。
 解決後の path が destination root 配下でない場合は error とする。
+解決後の path が `source root` 自身またはその配下にある場合は error とする。
+解決後の path が backup root 自身またはその配下にある場合も error とする。
+directory の再帰走査中に `source root` または backup root に到達した場合は、その subtree を走査せず warning を出して対象から除外する。
 
 対応する source-relative path が `source.ignore` の path と同じ、または `source.ignore` の path を directory とみなした subtree 配下にある file は warning を出して対象から除外し、source root 側の file を作成しない。
 
@@ -304,6 +368,7 @@ relative path が指定された場合は current working directory 基準で解
 同じ file が複数回対象になった場合は dedup する。
 
 通常の `add` は、対応する source root 側の path が存在しない場合だけコピーする。
+コピーは destination path の内容 bytes と permission bits を複製する。
 対応する source root 側の path に何か存在する場合は上書きせず対象から除外する。
 対応する source root 側の path の親 directory は必要なら作成する。
 
@@ -311,32 +376,36 @@ relative path が指定された場合は current working directory 基準で解
 placement rule も変更しない。
 
 通常の `add` で source root 側の file を新規作成した対象が `copy` 配置の場合、取り込み後の destination path は desired state と一致する。
-通常の `add` で source root 側の file を新規作成した対象が `symlink` 配置の場合、destination path は通常ファイルのまま残るため、取り込み後も `drifted` になりうる。
+通常の `add` で source root 側の file を新規作成した対象が `symlink` 配置の場合、destination path は通常ファイルのまま残るため、取り込み後は `drifted` になる。
 
 `--update` が指定された場合、対応する source root 側の path が既存 managed file である対象だけを更新する。
-`source.ignore` に一致する対象は managed file ではないため warning を出して対象から除外する。
+対応する source root 側の path が managed file でない対象は、`source.ignore` に一致する対象を含め、warning を出して対象から除外する。
 `--update` は `copy` 配置の managed file だけを対象にする。
 `symlink` 配置の managed file は warning を出して対象から除外する。
 destination path が通常ファイルでない場合は warning を出して対象から除外し、symlink は辿らない。
 `--update` は merge を行わず、destination path の内容 bytes と permission bits を managed file に反映する。
 
 `--install` が指定された場合、この add で対象になった file だけに `install` と同じ placement 処理を適用する。
+取り込みと placement は 1 つの plan として作成する。
+placement 側に plan 作成時に検出可能な error がある場合、取り込みを含めて filesystem を変更しない。
 `source.ignore` に一致して warning を出して対象から除外された file には `install` と同じ placement 処理も適用しない。
 全 managed file への反映は行わない。
 
 `--install` と `--update` は併用できない。
 
+`--dry-run` は取り込み予定を表示し、filesystem を変更しない。
 `--dry-run --install` は取り込み予定と install 予定の両方を表示し、filesystem を変更しない。
 `--dry-run --update` は更新予定を表示し、filesystem を変更しない。
 
 ### remove
 
 ```text
-dotkoke remove [--dry-run] <PATH>...
+dotkoke remove [--config <PATH>] [--dry-run] <PATH>...
 ```
 
 `remove` は `source root` 配下の managed file を削除する。
 `<PATH>...` は 1 個以上指定する。
+指定された path が存在しない場合は error とする。
 
 file が指定された場合、その managed file を対象にする。
 directory が指定された場合、その配下を再帰走査し、managed file を対象にする。
@@ -344,6 +413,7 @@ symlink は warning を出して対象から除外する。
 unknown file type は warning を出して対象から除外する。
 読み取れない directory、entry の読み取り失敗、file kind の判定不能は error とする。
 
+relative path が指定された場合は current working directory 基準で解決する。
 対象 path が `source root` 配下でない場合は error とする。
 
 対象 path が `source.ignore` の path と同じ、または `source.ignore` の path を directory とみなした subtree 配下にある場合は warning を出して対象から除外し、source root と destination root のどちらも変更しない。
@@ -352,8 +422,9 @@ unknown file type は warning を出して対象から除外する。
 同じ file が複数回対象になった場合は dedup する。
 
 `symlink` 配置の managed file を remove する場合、destination path がその managed file を指す symlink なら destination path の symlink を削除する。
-destination path が broken symlink の場合も削除する。
-destination path が別 symlink、通常ファイル、directory、unknown file type の場合は触らない。
+destination path の symlink を削除してから source root 側の managed file を削除する。
+destination path が broken symlink を含む別 symlink、通常ファイル、directory、unknown file type の場合は触らない。
+触らなかったことを output で明示する。
 
 `copy` 配置の managed file を remove する場合、destination path は削除しない。
 destination path を残したことを output で明示する。
@@ -365,7 +436,7 @@ source root 側の managed file は削除する。
 ### status
 
 ```text
-dotkoke status
+dotkoke status [--config <PATH>]
 ```
 
 `status` は読み取り専用である。
@@ -381,40 +452,44 @@ JSON output は提供しない。
 - `ok`: destination path が desired state と一致している。
 - `missing`: destination path が存在せず、親 path が作成可能である。
 - `drifted`: destination path が存在するが desired state と一致していない。
-- `blocked`: destination path の親 path の途中に install を妨げる path がある。
+- `blocked`: destination path 自体またはその親 path に install を妨げる問題がある。
 - `unsupported`: source tree 内に存在するが、symlink や unknown file type などのため managed file にならない。
 
 `ok` の定義は placement method によって異なる。
 `symlink` では destination path の symlink が managed file の canonical path を指している場合に `ok` とする。
-`copy` では destination path の regular file の内容 bytes と permission bits が managed file と一致する場合に `ok` とする。
+`copy` では destination path の通常ファイル の内容 bytes と permission bits が managed file と一致する場合に `ok` とする。
 
-`copy` の `drifted` は destination path の regular file の内容 bytes または permission bits が managed file と異なる状態を含む。
+`copy` の `drifted` は destination path の通常ファイル の内容 bytes または permission bits が managed file と異なる状態を含む。
 
 `drifted` は差分が存在する状態であり、`status` は解決方向を選ばない。
 managed file を desired state として destination path へ反映する場合は `install` を使う。
-`copy` 配置の destination path の regular file を managed file へ反映する場合は `add --update <PATH>` を使う。
+`copy` 配置の destination path の通常ファイル を managed file へ反映する場合は `add --update <PATH>` を使う。
 `blocked` は `install` できない状態である。
 `unsupported` は source tree の symlink や unknown file type などを表す。
 `source.ignore` によって除外された path は `unsupported` として表示しない。
 
 表示順は source-relative path 昇順とする。
-summary は常に表示する。
+表示は行ごとに status state と source-relative path を示し、必要に応じて placement method と補足理由を添える。
+`drifted` の補足理由は、内容差分、permission bits 差分、file kind 不一致、symlink target 不一致を区別する。
+summary は常に表示し、`ok`、`missing`、`drifted`、`blocked`、`unsupported` の順で件数を示す。
+表示文言の詳細はこの仕様では固定しない。
 
 例:
 
 ```text
 Status:
-  ok           .zshrc (symlink)
+  unsupported  .config/app/link (source symlink)
   missing      .config/foo/config.toml (copy)
   drifted      .gitconfig (copy, content differs)
-  blocked      .config/bar/config.toml (symlink, parent is a file: /home/me/.config)
-  unsupported  .config/app/link (source symlink)
+  blocked      .local/share/tool/config.toml (symlink, parent is a file: /home/me/.local)
+  ok           .zshrc (symlink)
 
 Summary: 1 ok, 1 missing, 1 drifted, 1 blocked, 1 unsupported
 ```
 
 判定に成功した場合、差分や `drifted` が存在しても exit code は 0 とする。
-configuration error、source tree scan error、filesystem inspection error がある場合は exit code を非 0 とする。
+destination path の検査や一致判定の判定不能は `blocked` として表示し、error として扱わない。
+configuration error または source tree scan error がある場合は exit code を非 0 とする。
 
 ## Output
 
@@ -426,6 +501,13 @@ warning は stderr に表示する。
 progress 表示を行う場合、通常 output を壊してはならない。
 非 TTY への出力では制御文字に依存した表示を行わない。
 
+## Exit Code
+
+error なく完了した実行の exit code は 0 とする。
+warning があっても error がなければ exit code は 0 とする。
+configuration error、plan 作成時に検出した error、plan 実行中の失敗、その他の error がある場合は exit code を非 0 とする。
+exit code の契約は 0 と非 0 の区別だけとし、非 0 の値は細分しない。
+
 ## Safety Requirements
 
 dotkoke は利用者の既存データを失わせないことを最優先する。
@@ -434,5 +516,10 @@ dotkoke は利用者の既存データを失わせないことを最優先する
 backup path への上書きは行わない。
 dry-run と通常実行は同じ plan に基づく。
 plan 作成時に検出可能な error がある場合、filesystem を変更しない。
+
+plan 実行中に filesystem operation が失敗した場合、失敗した operation で実行を停止し、以降の operation を実行しない。
+実行済みの operation は取り消さず、自動 rollback は行わない。
+停止までに実行した operation は output から判別できるようにする。
+backup path へ移動済みの destination path がある場合は、その backup path を output に含める。
 
 source tree と destination tree の path 解決では、symlink 判定、存在確認、権限エラー、broken symlink、親 path が directory でない場合を明示的に扱う。
