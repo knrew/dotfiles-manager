@@ -45,10 +45,46 @@ managed file の識別、`source.ignore`、placement rule の照合に使う。
 `destination root` から見た相対 path。
 destination path と backup path の対応付けに使う。
 
+## canonical path
+
+symlink をすべて解決した absolute path。
+path の同一性判定と包含判定に使う。
+
 ## managed file
 
 `source root` 配下の通常ファイルのうち、`source.ignore` に一致しない file。
-dotkoke が `install`、`add --update`、`remove`、`status` で管理対象として扱う単位である。
+dotkoke が `install`、`add`、`remove`、`status` で管理対象として扱う単位である。
+
+## permission bits
+
+file mode のうち permission を表す bits 全体。
+setuid、setgid、sticky bit を含む。
+owner、group、xattr、ACL は含まない。
+
+## broken symlink
+
+target を解決できない symlink。
+target が存在しない場合と、解決が symlink loop になる場合を含む。
+
+## unknown file type
+
+通常ファイル、directory、symlink のいずれでもない file type。
+FIFO、socket、device などを含む。
+
+## 判定不能
+
+permission エラーなどにより、path の存在、file kind、または一致判定を確定できない状態。
+path が存在しないことが確定している状態とは区別する。
+
+## file kind
+
+path の種類の判定結果。
+通常ファイル、directory、symlink、unknown file type、存在しない、のいずれかに分類する。
+
+## source tree scan error
+
+source tree の走査を不完全にする問題。
+読み取れない directory、entry の読み取り失敗、file kind の判定不能を含む。
 
 ## excluded path
 
@@ -106,7 +142,7 @@ plan を表示し、filesystem を変更しない実行 mode。
 - `ok`: destination path が desired state と一致している。
 - `missing`: destination path が存在せず、親 path が作成可能である。
 - `drifted`: destination path が存在するが desired state と一致していない。
-- `blocked`: destination path の親 path の途中に install を妨げる path がある。
+- `blocked`: destination path 自体またはその親 path に install を妨げる問題がある。
 - `unsupported`: source tree 内に存在するが、symlink や unknown file type などのため managed file にならない。
 
 ## Notation Rules
@@ -115,4 +151,4 @@ plan を表示し、filesystem を変更しない実行 mode。
 - `source-relative path` と `destination-relative path` は hyphenated form で書く。
 - `dry-run` は hyphenated form で書く。
 - `backup set directory`、`backup root`、`backup path` を使い分け、まとめて `backup directory` と曖昧に書かない。
-- `symlink` は filesystem object の種類を指すときに使い、CLI output や仕様上の用語としては `symbolic link` と混在させない。
+- filesystem object の種類は `symlink` と書き、`symbolic link` という表記は使わない。

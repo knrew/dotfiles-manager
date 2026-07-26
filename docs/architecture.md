@@ -21,6 +21,13 @@ filesystem を変更するコマンドは、plan 作成と plan 実行を分離�
 source tree の走査と destination path の検査は、通常ファイル、directory、symlink、broken symlink、unknown file type、判定不能状態を区別する。
 symlink を扱う処理では、目的に応じて `symlink_metadata`、`metadata`、`read_link` を使い分ける。
 
+## Path Resolution
+
+存在が保証された path は canonicalize してから比較する。
+config の各 root は読み込み時に、`add` と `remove` の入力 path は存在確認後に canonicalize する。
+未作成の destination path、backup path、broken symlink は、存在する前提で canonicalize しない。
+source tree の走査は symlink を辿らないため、canonical な `source root` に source-relative path を連結して得た managed file の path は canonical になる。
+
 ## Terminal Output
 
 CLI output の整形には `console` を使う方針とする。
@@ -45,10 +52,10 @@ TTY と非 TTY の違いを考慮し、pipe や log file に出力しても読�
 失敗は `Result` で返し、対象 path と失敗した操作が分かる error context を付ける。
 
 plan 作成中に検出できる error は、実行開始前にまとめて検出する。
-部分的な filesystem 変更を残さないため、致命的な source tree scan error や destination path の親 path の blocked 状態がある場合は filesystem を変更しない。
+部分的な filesystem 変更を残さないため、source tree scan error や destination path の blocked 状態がある場合は filesystem を変更しない。
 
-plan 実行中に失敗した場合は、実行済み filesystem operation が分かる context を付ける。
-自動 rollback は仕様化しない。
+plan 実行中に失敗した場合は仕様に従って実行を停止し、実行済み filesystem operation が分かる context を付ける。
+自動 rollback は行わない。
 
 ## Testing Strategy
 
