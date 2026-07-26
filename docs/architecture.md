@@ -43,8 +43,8 @@ TTY と非 TTY の違いを考慮し、pipe や log file に出力しても読�
 
 参考:
 
-- `console`: https://docs.rs/console/latest/console/
-- `indicatif`: https://docs.rs/indicatif/latest/indicatif/
+- [`console`](https://docs.rs/console/latest/console/)
+- [`indicatif`](https://docs.rs/indicatif/latest/indicatif/)
 
 ## Error Handling
 
