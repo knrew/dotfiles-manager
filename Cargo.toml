@@ -1,20 +1,36 @@
 [package]
-authors     = ["knrew"]
-description = "A dotfiles manager for Unix-like systems"
-edition     = "2024"
-license     = "MIT"
-name        = "dotkoke"
-publish     = false
-readme      = "README.md"
-repository  = "https://github.com/knrew/dotkoke"
-version     = "0.1.0"
+description  = ""
+edition      = "2024"
+license      = "MIT"
+name         = "dotkoke"
+publish      = false
+repository   = "https://github.com/knrew/dotkoke"
+rust-version = "1.97"
+version      = "0.1.0"
+
+# Blank lines are intentional: taplo sorts keys within each block, and the
+# blocks keep explicit lint choices near their Clippy group.
+[lints.clippy]
+all = {level = "deny", priority = -1}
+
+cargo = {level = "deny", priority = -1}
+
+# Explicit cargo overrides.
+multiple_crate_versions = "warn"
+
+pedantic = {level = "deny", priority = -1}
+
+# Explicit pedantic overrides.
+single_char_pattern = "allow"
+unreadable_literal  = "allow"
 
 [dependencies]
-anyhow = "1.0.102"
-chrono = "0.4.44"
-clap   = {features = ["derive"], version = "4.6.1"}
-serde  = {features = ["derive"], version = "1.0.228"}
-toml   = "1.1.2"
+anyhow    = "1.0.104"
+clap      = {features = ["derive"], version = "4.6.4"}
+console   = "0.16.4"
+indicatif = "0.18.6"
+serde     = {features = ["derive"], version = "1.0.229"}
+toml      = "1.1.3"
 
 [dev-dependencies]
 tempfile = "3.27.0"
