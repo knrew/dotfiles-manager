@@ -1,0 +1,14 @@
+bin.name = "dotkoke"
+args = ["init", "--help"]
+status.code = 0
+stdout = """
+Initialize the configuration and source tree
+
+Usage: dotkoke init [OPTIONS]
+
+Options:
+      --dry-run  Show the plan without changing the file system
+      --print    Print the fallback configuration
+  -h, --help     Print help
+"""
+stderr = ""

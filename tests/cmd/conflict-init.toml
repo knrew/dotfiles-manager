@@ -1,0 +1,11 @@
+bin.name = "dotkoke"
+args = ["init", "--print", "--dry-run"]
+status.code = 1
+stdout = ""
+stderr = """
+error: the argument '--print' cannot be used with '--dry-run'
+
+Usage: dotkoke init --print
+
+For more information, try '--help'.
+"""

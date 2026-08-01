@@ -1,0 +1,11 @@
+bin.name = "dotkoke"
+args = ["help"]
+status.code = 1
+stdout = ""
+stderr = """
+error: unrecognized subcommand 'help'
+
+Usage: dotkoke <COMMAND>
+
+For more information, try '--help'.
+"""

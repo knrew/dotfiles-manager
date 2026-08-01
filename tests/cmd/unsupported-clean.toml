@@ -1,0 +1,11 @@
+bin.name = "dotkoke"
+args = ["clean"]
+status.code = 1
+stdout = ""
+stderr = """
+error: unrecognized subcommand 'clean'
+
+Usage: dotkoke <COMMAND>
+
+For more information, try '--help'.
+"""

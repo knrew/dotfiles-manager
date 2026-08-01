@@ -1,0 +1,19 @@
+bin.name = "dotkoke"
+args = ["add", "--help"]
+status.code = 0
+stdout = """
+Add files to the source tree
+
+Usage: dotkoke add [OPTIONS] <PATH>...
+
+Arguments:
+  <PATH>...  Paths to add
+
+Options:
+      --config <PATH>  Use a specific configuration file
+      --dry-run        Show the plan without changing the file system
+      --install        Install the added files
+      --update         Update existing managed files
+  -h, --help           Print help
+"""
+stderr = ""

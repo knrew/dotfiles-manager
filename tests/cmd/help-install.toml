@@ -1,0 +1,14 @@
+bin.name = "dotkoke"
+args = ["install", "--help"]
+status.code = 0
+stdout = """
+Install all managed files
+
+Usage: dotkoke install [OPTIONS]
+
+Options:
+      --config <PATH>  Use a specific configuration file
+      --dry-run        Show the plan without changing the file system
+  -h, --help           Print help
+"""
+stderr = ""
