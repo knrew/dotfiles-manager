@@ -16,7 +16,7 @@ all = {level = "deny", priority = -1}
 cargo = {level = "deny", priority = -1}
 
 # Explicit cargo overrides.
-multiple_crate_versions = "warn"
+multiple_crate_versions = "allow"
 
 pedantic = {level = "deny", priority = -1}
 
