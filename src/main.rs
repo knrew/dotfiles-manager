@@ -36,9 +36,8 @@ enum Command {
 
 #[derive(Debug, Args)]
 struct InitArgs {
-    /// Show the plan without changing the file system.
-    #[arg(long)]
-    dry_run: bool,
+    #[command(flatten)]
+    dry_run: DryRunArgs,
 
     /// Print the fallback configuration.
     #[arg(long, conflicts_with = "dry_run")]
@@ -118,7 +117,7 @@ fn main() -> ExitCode {
 fn dispatch(command: Command) -> Result<()> {
     match command {
         Command::Init(InitArgs { dry_run, print }) => {
-            let _ = (dry_run, print);
+            let _ = (dry_run.dry_run, print);
             unimplemented_command("init")
         }
         Command::Install(InstallArgs { config, dry_run }) => {
