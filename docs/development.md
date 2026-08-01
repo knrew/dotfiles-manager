@@ -35,7 +35,8 @@ dotkoke のテストの網羅範囲は、少なくとも以下の挙動グルー
 
 - 設定の探索と検証。
 - `symlink` と `copy` の一致判定。
-- destination conflict の backup。
+- `drifted` の destination path の backup。
+- `remove` と `add --update` の managed file の backup。
 - broken symlink と相対 symlink の扱い。
 - source tree の symlink、unknown file type、source tree scan error。
 - `add` と `remove` の複数パス、ディレクトリ入力、重複除去。

@@ -14,7 +14,7 @@ Cargo package は単一 crate の `dotkoke` で、バイナリターゲット `d
 
 ## 2. モジュール構成と責務分離
 
-ファイルシステムを変更するコマンドは、plan の作成と plan の実行を分離します。`--dry-run` は通常実行と同じ plan を使い、plan を表示するだけでファイルシステムを変更しません。
+ファイルシステムを変更するコマンドは、plan の作成と plan の実行を分離します。`--dry-run` は通常実行と同じ手順で plan を作成し、plan を表示するだけでファイルシステムを変更しません。
 
 実装では以下の責務を分離します。
 
@@ -29,7 +29,7 @@ source tree の走査と destination path の検査は、通常ファイル、�
 
 ## 3. パス解決の実装方針
 
-存在が保証されたパスは canonicalize してから比較します。設定の各 root は読み込み時に、`add` と `remove` の入力パスは存在確認後に canonicalize します。未作成の destination path、backup path、broken symlink は、存在する前提で canonicalize しません。
+存在が保証されたパスは canonicalize してから比較します。設定の各 root は読み込み時に、`add` と `remove` の入力パスは存在確認後に canonicalize します。未作成の backup root は、存在する最も近い祖先を canonicalize してから残りの component を連結して扱います。未作成の destination path、backup path、broken symlink は、存在する前提で canonicalize しません。
 
 source tree の走査は symlink を辿らないため、canonical な source root に source-relative path を連結して得た managed file のパスは canonical になります。
 
@@ -52,4 +52,4 @@ CLI 出力の整形には `console` を使う方針とします。`console` は�
 
 plan 作成中に検出できるエラーは、実行開始前にまとめて検出します。部分的なファイルシステム変更を残さないため、source tree scan error や destination path の `blocked` 状態がある場合はファイルシステムを変更しません。
 
-plan 実行中に失敗した場合は仕様に従って実行を停止し、実行済みのファイルシステム操作が分かるコンテキストを付けます。自動 rollback は行いません。
+plan 実行では plan 作成時の検査結果を再検証せず、rename や作成には既存のパスを上書きしない操作を使い、前提の変化を操作の失敗として検出します。plan 実行中に失敗した場合は仕様に従って実行を停止し、実行済みのファイルシステム操作が分かるコンテキストを付けます。自動 rollback は行いません。

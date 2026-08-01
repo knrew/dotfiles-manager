@@ -8,9 +8,8 @@
 
 1. コマンドラインオプション `--config <PATH>`
 2. 環境変数 `DOTKOKE_CONFIG`
-3. `$XDG_CONFIG_HOME/dotkoke/config.toml`
-4. `$HOME/.config/dotkoke/config.toml`
-5. fallback config
+3. `$XDG_CONFIG_HOME/dotkoke/config.toml`(`XDG_CONFIG_HOME` が未設定の場合は `$HOME/.config/dotkoke/config.toml`)
+4. fallback config
 
 `--config` と `DOTKOKE_CONFIG` で指定したパスが存在しない場合はエラーになります。設定ファイルがどこにもない場合は、`$HOME` から導出する fallback config が使われます。`dotkoke init` は、この探索が発見するパスに設定ファイルを作成します。探索の正確な規定は [specification.md 3.1 節](specification.md#31-設定ファイルと探索)を参照してください。
 
@@ -29,6 +28,8 @@ root = "home"
 default_method = "symlink"
 ```
 
+`paths` の 3 つのキーと `source.root` は必須です。仕様に定義のないキーがあるとエラーになります。
+
 ## `[paths]`
 
 管理の基点になる 3 つのディレクトリを絶対パスで指定します。
@@ -37,7 +38,7 @@ default_method = "symlink"
 - `destination`: managed file の配置先(destination root)です。通常はホームディレクトリです。
 - `backup`: 既存ファイルの退避先(backup root)です。存在しない場合は必要になった時点で作成されます。
 
-`destination` と source root を同じディレクトリにする構成、および `destination` を source root の配下に置く構成はエラーになります。source root が `destination` の配下にある構成(ホームディレクトリ内に dotfiles リポジトリを置く一般的な構成)は使えます。制約の正は [specification.md 3.2 節](specification.md#32-paths)を参照してください。
+`destination` と source root を同じディレクトリにする構成、および `destination` を source root の配下に置く構成はエラーになります。`backup` を `dotfiles` と同じ場所またはその配下に置く構成、`backup` を `destination` と同じ場所またはその祖先に置く構成もエラーになります。source root が `destination` の配下にある構成(ホームディレクトリ内に dotfiles リポジトリを置く一般的な構成)は使えます。制約の正は [specification.md 3.2 節](specification.md#32-paths)を参照してください。
 
 ## `[source]`
 
