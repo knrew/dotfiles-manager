@@ -16,13 +16,6 @@
 - 単一の文書内でしか使わない術語。その文書内で定義します。
 - 挙動の説明。各語の定義は 1〜2 文と正本へのリンクまでとし、挙動の正は [specification.md](specification.md) に置きます。
 
-## CLI 用語
-
-- command: `init`、`install`、`add`、`remove`、`status` など、dotkoke の操作名。
-- option: `--config`、`--dry-run`、`--install` など、名前付きの指定。CLI ドキュメントでは flag ではなく option を使う。
-- argument: `<PATH>` のような位置引数、または `--config <PATH>` の `PATH` のような option の値。
-- usage: CLI またはリファレンスに示すコマンドの構文。
-
 ## パスとツリーの用語
 
 - source root: `paths.dotfiles` と `source.root` から決まる、管理対象の元ファイルを置く root ディレクトリ。具体的には `{paths.dotfiles}/{source.root}` である([specification.md 3.3 節](specification.md#33-source))。
@@ -50,24 +43,25 @@
 - unknown file type: 通常ファイル、ディレクトリ、symlink のいずれでもないファイル種別。FIFO、socket、device などを含む。
 - 判定不能: 権限エラーなどにより、パスの存在、file kind、または一致判定を確定できない状態。パスが存在しないことが確定している状態とは区別する。
 - source tree scan error: source tree の走査を不完全にする問題。読み取れないディレクトリ、エントリの読み取り失敗、file kind の判定不能を含む([specification.md 5 章](specification.md#5-managed-file))。
-- destination conflict: destination path が存在し、desired state と一致していない状態。`install` は destination conflict のあるパスを backup path へ移動してから desired state を作成する([specification.md 7 章](specification.md#7-destination-path-と-conflict))。
+- drifted: destination path が存在し、desired state と一致していない状態。`install` はこの destination path を backup path へ移動してから desired state を作成し、`status` は `drifted` として表示する([specification.md 7 章](specification.md#7-destination-path-と-drifted))。
 - status state: `status` が destination path ごとに表示する状態。`ok`、`missing`、`drifted`、`blocked`、`unsupported` の 5 値がある([specification.md 2.6 節](specification.md#26-status))。
 
 ## backup の用語
 
 - backup root: backup を保存する root ディレクトリ。`paths.backup` で指定する([specification.md 8 章](specification.md#8-backup))。
-- backup set directory: 1 回の実行で作成される backup 用のディレクトリ。backup root 配下に作成され、その実行で backup される destination path をまとめて保持する。
-- backup path: backup される destination path の移動先のパス。destination-relative path を backup set directory 配下に維持する。
+- backup set directory: 1 回の実行で作成される backup 用のディレクトリ。backup root 配下に作成され、その実行で backup されるパスをまとめて保持する。
+- backup path: backup される destination path や managed file の移動先のパス。destination-relative path または source-relative path を backup set directory 配下に維持する([specification.md 8 章](specification.md#8-backup))。
 
 ## plan と設定の用語
 
-- plan: 実行前に決定されるファイルシステム操作の一覧。`--dry-run` と通常実行は同じ plan に基づく([specification.md 10 章](specification.md#10-安全性要件))。
+- plan: 実行のたびに作成されるファイルシステム操作の一覧。`--dry-run` と通常実行は同じ plan 作成手順に基づく([specification.md 10 章](specification.md#10-安全性要件))。
 - dry-run: plan を表示し、ファイルシステムを変更しない実行モード。
 - fallback config: 設定ファイルの探索で設定ファイルが見つからない場合に使う、`$HOME` から導出する既定の設定。`init` が生成する設定と同等である([specification.md 3.5 節](specification.md#35-fallback-config))。
 
 ## 表記基準
 
-- CLI ドキュメントでは flag ではなく option を使う。
+- CLI の名前付きの指定は「オプション」と書き、「フラグ」や flag は使わない。
+- コマンドの操作名は「コマンド」と書き、「サブコマンド」は使わない。
 - source-relative path と destination-relative path はハイフン付きの形で書く。
 - dry-run はハイフン付きの形で書く。
 - backup set directory、backup root、backup path を使い分け、まとめて backup directory と曖昧に書かない。

@@ -54,7 +54,7 @@ dotkoke init --print   # fallback config を表示するだけで、何も作成
 
 ### `dotkoke install`
 
-source tree 全体を destination へ反映します。既存のファイルと衝突した場合は、backup へ退避してから配置します。
+source tree 全体を destination へ反映します。既存のファイルと衝突した場合は、backup root 配下へ退避してから配置します。
 
 ```sh
 dotkoke install --dry-run
@@ -72,11 +72,11 @@ dotkoke add --update ~/.gitconfig  # copy 配置のファイルの変更を sour
 ```
 
 - 通常の `add` は source root 側にファイルを作るだけで、destination 側は変更しません。`symlink` 配置のファイルは取り込み後 `drifted` になるため、続けて `dotkoke install` を実行するか、最初から `--install` を使ってください。
-- `--update` は `copy` 配置の managed file だけを対象に、destination 側の変更を source 側へ反映します。
+- `--update` は `copy` 配置の managed file だけを対象に、destination 側の変更を source 側へ反映します。更新前の内容は backup set directory へ退避されます。
 
 ### `dotkoke remove`
 
-source root 配下の managed file を削除します。
+source root 配下の managed file を管理対象から取り除きます。取り除かれた managed file は削除されず、backup set directory へ退避されます。
 
 ```sh
 dotkoke remove --dry-run ~/.dotfiles/home/.zshrc
@@ -103,6 +103,6 @@ dotkoke status
 
 dotkoke は利用者の既存データを失わせないことを最優先に設計されています([specification.md 10 章](specification.md#10-安全性要件))。
 
-- 変更を伴うコマンドはすべて `--dry-run` で plan を事前確認できます。dry-run と通常実行は同じ plan に基づくため、確認した内容と実行される操作は一致します。
-- `install` が既存のファイルを置き換える場合、削除ではなく backup root 配下の backup set directory(実行ごとの `YYYYmmdd_HHMMSS` 形式のディレクトリ)へ移動します。想定外の置き換えが起きた場合も、backup から手動で復元できます。
-- plan の作成時に検出できるエラーがある場合、ファイルシステムは一切変更されません。実行中に操作が失敗した場合はその場で停止し、実行済みの操作と backup へ移動したパスを出力から確認できます。自動 rollback は行われません。
+- 変更を伴うコマンドはすべて `--dry-run` で plan を事前確認できます。dry-run と通常実行は同じ手順で plan を作るため、同じ状態のファイルシステムに対しては同じ操作が計画されます。plan は実行のたびに作り直されるため、実行の間に状態が変わればその分は plan も変わり、backup set directory の名前も実行時刻で決まります。
+- `install` が既存のファイルを置き換える場合や、`remove` / `add --update` が managed file を取り除き・更新する場合、対象は削除されず backup root 配下の backup set directory(実行ごとの `YYYYmmdd_HHMMSS` 形式のディレクトリ)へ移動されます。想定外の置き換えが起きた場合も、backup set directory から手動で復元できます。
+- plan の作成時に検出できるエラーがある場合、ファイルシステムは一切変更されません。実行中に操作が失敗した場合はその場で停止し、実行済みの操作と退避先の backup path を出力から確認できます。自動 rollback は行われません。
