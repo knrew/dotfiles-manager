@@ -1,154 +1,74 @@
-# dotkoke Glossary
+# dotkoke 用語集
 
-この文書は dotkoke の仕様文書で使う主要用語を定義する。
-仕様の正は `docs/specification.md` であり、この文書は用語の意味を補足する。
+この用語集は、dotkoke のドキュメントで使う用語を定義します。ドキュメントを編集するときは、ここにある語を優先してください。ドキュメント全体の構成と執筆規約は [development.md](development.md#ドキュメント構成と執筆規約) を参照してください。
 
-## CLI terms
+## 記載基準
+
+用語の各節に載せる語は、次のいずれかに該当し、かつ複数のドキュメントで使われる語とします。
+
+- dotkoke が導入した固有の概念・機能名。
+- 一般的な用法や外部仕様の用法と意味・範囲が異なる、または dotkoke が限定した意味で使う用語。
+- dotkoke 内に似た概念が併存し、混同しやすい用語。対になる語を揃えて載せ、区別が分かる定義を書く。
+
+次の内容は載せません。
+
+- 外部仕様の用語で、dotkoke が標準的な意味のまま使うもの(TOML、XDG など)。
+- 単一の文書内でしか使わない術語。その文書内で定義します。
+- 挙動の説明。各語の定義は 1〜2 文と正本へのリンクまでとし、挙動の正は [specification.md](specification.md) に置きます。
+
+## CLI 用語
 
 - command: `init`、`install`、`add`、`remove`、`status` など、dotkoke の操作名。
-- option: `--config`、`--dry-run`、`--install` など、名前付きの指定。CLI ドキュメントでは `flag` ではなく `option` を使う。
-- argument: `<PATH>` のような位置引数、または `--config <PATH>` の `PATH` のような option value。
-- usage: CLI または reference に示す command syntax。
+- option: `--config`、`--dry-run`、`--install` など、名前付きの指定。CLI ドキュメントでは flag ではなく option を使う。
+- argument: `<PATH>` のような位置引数、または `--config <PATH>` の `PATH` のような option の値。
+- usage: CLI またはリファレンスに示すコマンドの構文。
 
-## source root
+## パスとツリーの用語
 
-`paths.dotfiles` と `source.root` から決まる、管理対象の元 file を置く root directory。
-具体的には `{paths.dotfiles}/{source.root}` である。
+- source root: `paths.dotfiles` と `source.root` から決まる、管理対象の元ファイルを置く root ディレクトリ。具体的には `{paths.dotfiles}/{source.root}` である([specification.md 3.3 節](specification.md#33-source))。
+- source tree: source root 配下のファイルシステムの tree。dotkoke はこの tree を走査して managed file を見つける([specification.md 5 章](specification.md#5-managed-file))。
+- source-relative path: source root から見た相対パス。managed file の識別、`source.ignore`、placement rule の照合に使う。
+- destination root: managed file の配置先の root ディレクトリ。通常は利用者のホームディレクトリである。
+- destination tree: destination root 配下のファイルシステムの tree。dotkoke は managed file に対応する destination path だけを扱い、destination tree 全体から未管理のファイルを探すことはしない。
+- destination path: managed file の配置先のパス。存在しないこともあり、存在する場合も通常ファイル、ディレクトリ、symlink、broken symlink、unknown file type などになりうる。
+- destination-relative path: destination root から見た相対パス。destination path と backup path の対応付けに使う。
+- canonical path: symlink をすべて解決した絶対パス。パスの同一性判定と包含判定に使う([specification.md 4 章](specification.md#4-パス解決))。
 
-## source tree
+## managed file と placement の用語
 
-`source root` 配下の filesystem tree。
-dotkoke はこの tree を走査して managed file を見つける。
+- managed file: source root 配下の通常ファイルのうち、`source.ignore` に一致しないファイル。dotkoke が `install`、`add`、`remove`、`status` で管理対象として扱う単位([specification.md 5 章](specification.md#5-managed-file))。
+- excluded path: `source.ignore` によって managed file から除外される source-relative path。どのコマンドでも managed file として扱わない([specification.md 3.3 節](specification.md#33-source))。
+- placement method: managed file を destination path に配置する方法。指定できる値は `symlink` と `copy` である([specification.md 6 章](specification.md#6-placement-method))。
+- placement rule: managed file の source-relative path に placement method を割り当てる設定。一致する placement rule がない managed file には `placement.default_method` を使う([specification.md 3.4 節](specification.md#34-placement))。
+- desired state: placement method によって定まる destination path のあるべき状態。`install` は destination path を desired state に近づける。
+- permission bits: file mode のうち permission を表す bits 全体。setuid、setgid、sticky bit を含み、owner、group、xattr、ACL は含まない。
 
-## destination root
+## 判定と状態の用語
 
-managed file の配置先 root directory。
-通常は利用者の home directory である。
+- file kind: パスの種類の判定結果。通常ファイル、ディレクトリ、symlink、unknown file type、存在しない、のいずれかに分類する。
+- broken symlink: target を解決できない symlink。target が存在しない場合と、解決が symlink loop になる場合を含む。
+- unknown file type: 通常ファイル、ディレクトリ、symlink のいずれでもないファイル種別。FIFO、socket、device などを含む。
+- 判定不能: 権限エラーなどにより、パスの存在、file kind、または一致判定を確定できない状態。パスが存在しないことが確定している状態とは区別する。
+- source tree scan error: source tree の走査を不完全にする問題。読み取れないディレクトリ、エントリの読み取り失敗、file kind の判定不能を含む([specification.md 5 章](specification.md#5-managed-file))。
+- destination conflict: destination path が存在し、desired state と一致していない状態。`install` は destination conflict のあるパスを backup path へ移動してから desired state を作成する([specification.md 7 章](specification.md#7-destination-path-と-conflict))。
+- status state: `status` が destination path ごとに表示する状態。`ok`、`missing`、`drifted`、`blocked`、`unsupported` の 5 値がある([specification.md 2.6 節](specification.md#26-status))。
 
-## destination tree
+## backup の用語
 
-`destination root` 配下の filesystem tree。
-dotkoke は managed file に対応する destination path だけを扱い、destination tree 全体から未管理 file を探すことはしない。
+- backup root: backup を保存する root ディレクトリ。`paths.backup` で指定する([specification.md 8 章](specification.md#8-backup))。
+- backup set directory: 1 回の実行で作成される backup 用のディレクトリ。backup root 配下に作成され、その実行で backup される destination path をまとめて保持する。
+- backup path: backup される destination path の移動先のパス。destination-relative path を backup set directory 配下に維持する。
 
-## destination path
+## plan と設定の用語
 
-managed file の配置先 path。
-destination path は存在しないこともあり、存在する場合も通常ファイル、directory、symlink、broken symlink、unknown file type などになりうる。
+- plan: 実行前に決定されるファイルシステム操作の一覧。`--dry-run` と通常実行は同じ plan に基づく([specification.md 10 章](specification.md#10-安全性要件))。
+- dry-run: plan を表示し、ファイルシステムを変更しない実行モード。
+- fallback config: 設定ファイルの探索で設定ファイルが見つからない場合に使う、`$HOME` から導出する既定の設定。`init` が生成する設定と同等である([specification.md 3.5 節](specification.md#35-fallback-config))。
 
-## source-relative path
+## 表記基準
 
-`source root` から見た相対 path。
-managed file の識別、`source.ignore`、placement rule の照合に使う。
-
-## destination-relative path
-
-`destination root` から見た相対 path。
-destination path と backup path の対応付けに使う。
-
-## canonical path
-
-symlink をすべて解決した absolute path。
-path の同一性判定と包含判定に使う。
-
-## managed file
-
-`source root` 配下の通常ファイルのうち、`source.ignore` に一致しない file。
-dotkoke が `install`、`add`、`remove`、`status` で管理対象として扱う単位である。
-
-## permission bits
-
-file mode のうち permission を表す bits 全体。
-setuid、setgid、sticky bit を含む。
-owner、group、xattr、ACL は含まない。
-
-## broken symlink
-
-target を解決できない symlink。
-target が存在しない場合と、解決が symlink loop になる場合を含む。
-
-## unknown file type
-
-通常ファイル、directory、symlink のいずれでもない file type。
-FIFO、socket、device などを含む。
-
-## 判定不能
-
-permission エラーなどにより、path の存在、file kind、または一致判定を確定できない状態。
-path が存在しないことが確定している状態とは区別する。
-
-## file kind
-
-path の種類の判定結果。
-通常ファイル、directory、symlink、unknown file type、存在しない、のいずれかに分類する。
-
-## source tree scan error
-
-source tree の走査を不完全にする問題。
-読み取れない directory、entry の読み取り失敗、file kind の判定不能を含む。
-
-## excluded path
-
-`source.ignore` によって managed file から除外される source-relative path。
-excluded path は `install`、`add`、`remove`、`status` のいずれでも managed file として扱わない。
-
-## placement method
-
-managed file を destination path に配置する方法。
-指定できる値は `symlink` と `copy` である。
-
-## placement rule
-
-managed file の source-relative path に placement method を割り当てる設定。
-一致する placement rule がない managed file には `placement.default_method` を使う。
-
-## desired state
-
-placement method によって定まる destination path のあるべき状態。
-`install` は destination path を desired state に近づける。
-
-## destination conflict
-
-destination path が存在し、desired state と一致していない状態。
-`install` は destination conflict のある path を backup path へ移動してから desired state を作成する。
-
-## backup root
-
-backup を保存する root directory。
-`paths.backup` で指定する。
-
-## backup set directory
-
-1 回の実行で作成される backup 用 directory。
-backup set directory は backup root 配下に作成され、その実行で backup される destination path をまとめて保持する。
-
-## backup path
-
-backup される destination path の移動先 path。
-destination-relative path を backup set directory 配下に維持する。
-
-## plan
-
-実行前に決定される filesystem operation の一覧。
-`--dry-run` と通常実行は同じ plan に基づく。
-
-## dry-run
-
-plan を表示し、filesystem を変更しない実行 mode。
-
-## status state
-
-`status` が destination path ごとに表示する状態。
-
-- `ok`: destination path が desired state と一致している。
-- `missing`: destination path が存在せず、親 path が作成可能である。
-- `drifted`: destination path が存在するが desired state と一致していない。
-- `blocked`: destination path 自体またはその親 path に install を妨げる問題がある。
-- `unsupported`: source tree 内に存在するが、symlink や unknown file type などのため managed file にならない。
-
-## Notation Rules
-
-- CLI documentation では `flag` ではなく `option` を使う。
-- `source-relative path` と `destination-relative path` は hyphenated form で書く。
-- `dry-run` は hyphenated form で書く。
-- `backup set directory`、`backup root`、`backup path` を使い分け、まとめて `backup directory` と曖昧に書かない。
-- filesystem object の種類は `symlink` と書き、`symbolic link` という表記は使わない。
+- CLI ドキュメントでは flag ではなく option を使う。
+- source-relative path と destination-relative path はハイフン付きの形で書く。
+- dry-run はハイフン付きの形で書く。
+- backup set directory、backup root、backup path を使い分け、まとめて backup directory と曖昧に書かない。
+- ファイルシステム上の種別は symlink と書き、symbolic link という表記は使わない。
