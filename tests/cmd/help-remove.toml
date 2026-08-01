@@ -1,0 +1,17 @@
+bin.name = "dotkoke"
+args = ["remove", "--help"]
+status.code = 0
+stdout = """
+Remove files from management
+
+Usage: dotkoke remove [OPTIONS] <PATH>...
+
+Arguments:
+  <PATH>...  Paths to remove
+
+Options:
+      --config <PATH>  Use a specific configuration file
+      --dry-run        Show the plan without changing the file system
+  -h, --help           Print help
+"""
+stderr = ""

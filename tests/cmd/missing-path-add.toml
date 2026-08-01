@@ -1,0 +1,12 @@
+bin.name = "dotkoke"
+args = ["add"]
+status.code = 1
+stdout = ""
+stderr = """
+error: the following required arguments were not provided:
+  <PATH>...
+
+Usage: dotkoke add <PATH>...
+
+For more information, try '--help'.
+"""

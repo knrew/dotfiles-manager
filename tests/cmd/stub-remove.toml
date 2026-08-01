@@ -1,0 +1,7 @@
+bin.name = "dotkoke"
+args = ["remove", "--config", "config.toml", "--dry-run", "a", "b"]
+status.code = 1
+stdout = ""
+stderr = """
+Error: the 'remove' command is not implemented yet
+"""

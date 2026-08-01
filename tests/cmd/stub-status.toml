@@ -1,0 +1,7 @@
+bin.name = "dotkoke"
+args = ["status", "--config", "config.toml"]
+status.code = 1
+stdout = ""
+stderr = """
+Error: the 'status' command is not implemented yet
+"""

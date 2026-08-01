@@ -1,0 +1,13 @@
+bin.name = "dotkoke"
+args = ["list"]
+status.code = 1
+stdout = ""
+stderr = """
+error: unrecognized subcommand 'list'
+
+  tip: a similar subcommand exists: 'install'
+
+Usage: dotkoke <COMMAND>
+
+For more information, try '--help'.
+"""

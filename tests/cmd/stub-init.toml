@@ -1,0 +1,7 @@
+bin.name = "dotkoke"
+args = ["init"]
+status.code = 1
+stdout = ""
+stderr = """
+Error: the 'init' command is not implemented yet
+"""

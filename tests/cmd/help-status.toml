@@ -1,0 +1,13 @@
+bin.name = "dotkoke"
+args = ["status", "--help"]
+status.code = 0
+stdout = """
+Show the status of managed files
+
+Usage: dotkoke status [OPTIONS]
+
+Options:
+      --config <PATH>  Use a specific configuration file
+  -h, --help           Print help
+"""
+stderr = ""

@@ -1,0 +1,20 @@
+bin.name = "dotkoke"
+args = ["--help"]
+status.code = 0
+stdout = """
+Manage dotfiles safely
+
+Usage: dotkoke <COMMAND>
+
+Commands:
+  init     Initialize the configuration and source tree
+  install  Install all managed files
+  add      Add files to the source tree
+  remove   Remove files from management
+  status   Show the status of managed files
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+"""
+stderr = ""

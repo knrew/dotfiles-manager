@@ -1,0 +1,11 @@
+bin.name = "dotkoke"
+args = ["add", "--install", "--update", "path"]
+status.code = 1
+stdout = ""
+stderr = """
+error: the argument '--install' cannot be used with '--update'
+
+Usage: dotkoke add --install <PATH>...
+
+For more information, try '--help'.
+"""

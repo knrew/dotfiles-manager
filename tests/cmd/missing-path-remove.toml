@@ -1,0 +1,12 @@
+bin.name = "dotkoke"
+args = ["remove"]
+status.code = 1
+stdout = ""
+stderr = """
+error: the following required arguments were not provided:
+  <PATH>...
+
+Usage: dotkoke remove <PATH>...
+
+For more information, try '--help'.
+"""

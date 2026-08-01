@@ -1,0 +1,7 @@
+bin.name = "dotkoke"
+args = ["add", "--config", "config.toml", "--dry-run", "a", "b"]
+status.code = 1
+stdout = ""
+stderr = """
+Error: the 'add' command is not implemented yet
+"""
