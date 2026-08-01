@@ -142,6 +142,7 @@ dependencies = [
  "clap",
  "console",
  "indicatif",
+ "libc",
  "serde",
  "tempfile",
  "toml",
